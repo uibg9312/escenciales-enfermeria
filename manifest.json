@@ -2,10 +2,10 @@
   "name": "Herramientas Médicas + NANDA",
   "short_name": "MedTools",
   "description": "Calculadora médica y buscador de etiquetas NANDA para profesionales de la salud.",
-  "start_url": "/index.html", // O simplemente "/" si tu servidor lo maneja
-  "display": "standalone", // Hace que se vea como una app nativa
-  "background_color": "#2c5282", // Color de fondo al iniciar (azul oscuro de tu nav)
-  "theme_color": "#2c5282", // Color de la barra de estado/navegación (azul oscuro de tu nav)
+  "start_url": "/index.html", 
+  "display": "standalone", 
+  "background_color": "#2c5282", 
+  "theme_color": "#2c5282", 
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -16,8 +16,7 @@
     {
       "src": "./icons/icon-192x192.png", // Ícono principal para Android
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable" // Para iconos adaptativos
+      "type": "image/png"
     },
     {
       "src": "./icons/icon-256x256.png", // Asegúrate que este archivo exista
