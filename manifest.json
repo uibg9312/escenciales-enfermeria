@@ -9,17 +9,17 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "./icons/icon-128x128.png", // Asegúrate que este archivo exista
+      "src": "/icons/icon-128x128.png", // Asegúrate que este archivo exista
       "sizes": "128x128",
       "type": "image/png"
     },
     {
-      "src": "./icons/icon-256x256.png", // Asegúrate que este archivo exista
+      "src": "/icons/icon-256x256.png", // Asegúrate que este archivo exista
       "sizes": "256x256",
       "type": "image/png"
     },
     {
-      "src": "./icons/icon-512x512.png", // Ícono para pantalla de bienvenida y Play Store
+      "src": "/icons/icon-512x512.png", // Ícono para pantalla de bienvenida y Play Store
       "sizes": "512x512",
       "type": "image/png"
     }
