@@ -1,0 +1,23 @@
+{
+    "name": "Esenciales de Enfermería",
+    "short_name": "Enfermería",
+    "description": "Herramientas y recursos esenciales para profesionales de enfermería",
+    "start_url": "./Esenciales de Enfermería 3.1.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2c5282",
+    "icons": [
+        {
+            "src": "images/thumbnails/icon_192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "images/thumbnails/icon_512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+} 
