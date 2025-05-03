@@ -20,7 +20,7 @@
       "purpose": "any maskable" // Para iconos adaptativos
     },
     {
-      "src": "./icons/icon-384x384.png", // Asegúrate que este archivo exista
+      "src": "./icons/icon-256x256.png", // Asegúrate que este archivo exista
       "sizes": "256x256",
       "type": "image/png"
     },
