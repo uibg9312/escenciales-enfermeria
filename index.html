@@ -1,14 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="es">
 
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon_192x192.png" type="image/png">
 <head>
 <meta charset="UTF-8">
 
-<!-- Enlace al Manifest para PWA -->
-<link rel="manifest" href="manifest.json">
-
-<!-- Favicon -->
-<link rel="icon" href="icons/icon_192x192.png" type="image/png">
 
 <!-- Color de la barra de estado/navegador (para coherencia) -->
 <meta name="theme-color" content="#2c5282">
@@ -112,9 +110,9 @@
     color: #718096; /* Medium gray */
   }
 
-  /* --- Form Elements (Calculadora - Inputs Generados) --- */
+  /* --- Form Elements (Calculadora) --- */
   .card input[type="number"],
-  .card select { /* Aplica a selects generados DENTRO del form */
+  .card select {
     width: 100%;
     padding: 0.75rem 1rem; /* Standard padding */
     border: 1px solid #cbd5e0; /* Lighter gray border */
@@ -126,8 +124,7 @@
     min-height: calc(1.5em + 1.5rem + 2px); /* Adjust based on line-height, padding, border */
   }
 
-  /* Estilos para selects generados DENTRO del form */
-  .card #formulario select {
+  .card select {
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
@@ -137,87 +134,16 @@
       background-size: 1.25em;
       padding-right: 2.5rem;
   }
-   .card #formulario select:required:invalid { color: #718096; }
-   .card #formulario select option:not(:first-child) { color: #1a202c; }
-   .card #formulario select option[value=""][disabled] { display: none; }
+
+   .card select:required:invalid { color: #718096; }
+   .card select option:not(:first-child) { color: #1a202c; }
+   .card select option[value=""][disabled] { display: none; }
 
   .card input[type="number"]:focus,
-  .card #formulario select:focus { /* Aplica a selects generados DENTRO del form */
+  .card select:focus {
     outline: none;
     border-color: #3182ce; /* Blue border on focus */
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3); /* Blue glow */
-  }
-
-  /* --- NUEVO: Estilos para Selección de Cálculo con Botones --- */
-  #calcSelectionContainer {
-      margin-bottom: 2rem; /* Espacio antes del formulario */
-      padding: 1rem;
-      background-color: #f8fafc; /* Fondo ligeramente distinto */
-      border: 1px solid #e2e8f0;
-      border-radius: 0.75rem;
-  }
-
-  #calcSelectionContainer h2 {
-      margin-top: 0;
-      margin-bottom: 1.5rem;
-      text-align: center;
-      font-size: 1.2em;
-      color: #2c5282;
-      font-weight: 600;
-  }
-
-  .calc-group {
-      margin-bottom: 1.5rem;
-  }
-  .calc-group:last-child {
-      margin-bottom: 0;
-  }
-
-  .calc-group-heading {
-      font-size: 1em;
-      font-weight: 600;
-      color: #4a5568;
-      margin-bottom: 0.75rem;
-      padding-bottom: 0.25rem;
-      border-bottom: 1px solid #e2e8f0;
-  }
-
-  .calc-option-button {
-      display: inline-block; /* O 'block' si quieres uno por línea */
-      background-color: #ffffff;
-      border: 1px solid #cbd5e0;
-      color: #2d3748;
-      padding: 0.6rem 1rem;
-      margin: 0.25rem; /* Espacio entre botones */
-      border-radius: 0.375rem;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: 500;
-      transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
-      text-align: left; /* Alineación del texto */
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  }
-
-  .calc-option-button:hover {
-      background-color: #edf2f7;
-      border-color: #a0aec0;
-  }
-
-  .calc-option-button.active {
-      background-color: #3182ce; /* Azul primario */
-      color: #ffffff;
-      border-color: #2b6cb0;
-      font-weight: 600;
-      transform: scale(1.02); /* Ligero zoom al seleccionar */
-      box-shadow: 0 2px 5px rgba(49, 130, 206, 0.3);
-  }
-
-  /* Placeholder del Form (se gestiona visibilidad con JS) */
-  #formPlaceholder {
-    text-align: center;
-    color: #718096;
-    margin-top: 2rem;
-    font-style: italic;
   }
 
   /* More specific selector for the calculator button */
@@ -234,7 +160,6 @@
     border-radius: 0.5rem;
     transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: none; /* Oculto inicialmente */
   }
 
   .card button#calcBtn:disabled {
@@ -259,13 +184,9 @@
     color: #2d3748; /* Dark gray text */
     border: 1px dashed #cbd5e0; /* Lighter dashed border */
     min-height: 50px;
-    display: none; /* Oculto inicialmente */
   }
 
   /* --- Formula/Info Display (Calculadora) --- */
-  .card #formulaDisplayArea {
-      display: none; /* Oculto inicialmente */
-  }
   .card .formula-display-static,
   .card .constante-info,
   .card .info-display-static {
@@ -286,26 +207,21 @@
    .card .constante-info li { margin-bottom: 0.25rem; }
    .card .constante-info strong { display: block; font-style: normal; font-weight: 600; margin-bottom: 0.5rem; color: #2d3748; }
 
-  /* --- Grid Layout (Calculadora - Generado) --- */
-  .card #formulario .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .card #formulario .input-unit-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; align-items: end; }
-  .card #formulario .input-unit-grid label { grid-column: 1 / -1; margin-bottom: 0.25rem; }
+  /* --- Grid Layout (Calculadora) --- */
+  .card .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .card .input-unit-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; align-items: end; }
+  .card .input-unit-grid label { grid-column: 1 / -1; margin-bottom: 0.25rem; }
 
-  /* --- Helper Text (Calculadora - Generado) --- */
-  .card #formulario #percentHelper { font-size: 0.8rem; color: #718096; margin-top: 0.25rem; min-height: 1em; }
+  /* --- Helper Text (Calculadora) --- */
+  .card #percentHelper { font-size: 0.8rem; color: #718096; margin-top: 0.25rem; min-height: 1em; }
 
   /* --- Disclaimer (Calculadora) --- */
   .card .disclaimer { margin-top: 2rem; text-align: center; }
   .card .disclaimer small { color: #e53e3e; font-weight: 500; }
 
-  /* --- Custom Input Sections (Calculadora - Generado) --- */
-  .card #formulario .custom-input-section {
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      margin-top: 1rem;
-      background-color: #f8fafc;
-   }
+  /* --- Custom Input Sections (Calculadora) --- */
+  .card .custom-input-section { border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; background-color: #f8fafc; }
+
 
   /* --- NANDA Searcher Styles --- */
   .nanda-container { /* Renamed from .container to avoid conflicts */
@@ -513,8 +429,12 @@
     }
 
    /* Ocultar el estilo .result-item original ya que ahora usamos .result-item-details */
+   /* Opcional: Si quieres mantener algún estilo, ajústalo a .result-item-details */
    .nanda-container .result-item {
        /* Estilos antiguos - probablemente ya no necesarios o deben adaptarse */
+       /* border-bottom: none;
+       padding: 0;
+       margin-bottom: 0; */
    }
 
 
@@ -530,21 +450,13 @@
 
     /* Calculator specific responsive */
     .card { padding: 1.5rem; margin: 1rem auto; }
-    .card #formulario .grid,
-    .card #formulario .input-unit-grid {
-        grid-template-columns: 1fr; /* Cambiar grids a una columna */
-        gap: 0.5rem;
-     }
-    .card #formulario .input-unit-grid label { margin-bottom: 0.5rem; }
+    .card .grid, .card .input-unit-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+    .card .input-unit-grid label { margin-bottom: 0.5rem; }
     .card h1 { font-size: 1.5rem; }
     .card button#calcBtn { padding: 0.75rem 1rem; font-size: 1rem; }
     .card #result { padding: 1rem; font-size: 1rem; }
     .card .formula-display-static, .card .constante-info, .card .info-display-static { font-size: 0.8em; padding: 0.5rem; }
-    .card #formulario select { font-size: 1rem; padding: 0.8rem 1rem; padding-right: 2.8rem; background-size: 1.4em; background-position: right 0.8rem center; }
-    #calcSelectionContainer h2 { font-size: 1.1em; }
-    .calc-option-button { font-size: 0.85rem; padding: 0.5rem 0.8rem; }
-    .calc-group-heading { font-size: 0.95em; }
-
+    .card select { font-size: 1rem; padding: 0.8rem 1rem; padding-right: 2.8rem; background-size: 1.4em; background-position: right 0.8rem center; }
 
     /* NANDA specific responsive */
     .nanda-container { padding: 20px; margin: 1rem auto; }
@@ -584,78 +496,57 @@
     <div class="card">
         <h1>Calculadora Médica <small>v1.3.1</small></h1>
 
-        <!-- NUEVO: Contenedor para la Selección de Cálculo -->
-        <div id="calcSelectionContainer">
-            <h2>Seleccione el cálculo:</h2>
-
-            <div class="calc-group">
-                <h3 class="calc-group-heading">Pérdidas Insensibles</h3>
-                <button type="button" class="calc-option-button" data-value="normo">P.I. (Normotérmico)</button>
-                <button type="button" class="calc-option-button" data-value="hiper">P.I. (Hipertermia)</button>
-                <button type="button" class="calc-option-button" data-value="venti">P.I. con ventilador</button>
-                <button type="button" class="calc-option-button" data-value="quemaduras">P.I. en quemaduras</button>
-                <button type="button" class="calc-option-button" data-value="perdidasPedia">P.I. pediátricas (BSA)</button>
-                <button type="button" class="calc-option-button" data-value="perdidasNeo">P.I. en neonatos</button>
-            </div>
-
-            <div class="calc-group">
-                <h3 class="calc-group-heading">Generales / Antropometría</h3>
-                <button type="button" class="calc-option-button" data-value="scq">SCQ Pediátrico (BSA)</button>
-                <button type="button" class="calc-option-button" data-value="imc">Índice de Masa Corporal (IMC)</button>
-            </div>
-
-            <div class="calc-group">
-                <h3 class="calc-group-heading">Hemodinamia</h3>
-                <button type="button" class="calc-option-button" data-value="pam">Presión Arterial Media (PAM)</button>
-                <button type="button" class="calc-option-button" data-value="pvc">Presión Venosa Central (PVC) - Info</button>
-            </div>
-
-            <div class="calc-group">
-                <h3 class="calc-group-heading">Dosificación Medicamentos</h3>
-                <button type="button" class="calc-option-button" data-value="dosisVol">Volumen de Medicamento</button>
-                <button type="button" class="calc-option-button" data-value="dosisPeso">Dosis por Peso</button>
-            </div>
-
-            <div class="calc-group">
-                <h3 class="calc-group-heading">Infusiones IV</h3>
-                <button type="button" class="calc-option-button" data-value="velocidadInf">Velocidad Infusión (mL/hr)</button>
-                <button type="button" class="calc-option-button" data-value="calculoGoteo">Cálculo de Goteo (gotas/min)</button>
-            </div>
-
-            <div class="calc-group">
-                <h3 class="calc-group-heading">Soluciones Glucosadas</h3>
-                <button type="button" class="calc-option-button" data-value="mixGlucosa">Mezcla Glucosadas (% Obj)</button>
-                <button type="button" class="calc-option-button" data-value="gir">Tasa Infusión Glucosa (TIG / GIR)</button>
-                <button type="button" class="calc-option-button" data-value="volGlucosa">Volumen para Gramos Glucosa</button>
-            </div>
-
-            <div class="calc-group">
-                <h3 class="calc-group-heading">Soluciones Salinas</h3>
-                <button type="button" class="calc-option-button" data-value="mix">Mezcla Salinas (Na⁺ Obj)</button>
-            </div>
-
-            <div class="calc-group">
-                <h3 class="calc-group-heading">Conversiones</h3>
-                <button type="button" class="calc-option-button" data-value="convMgMcg">Conversión mg <-> mcg</button>
-                <button type="button" class="calc-option-button" data-value="convGMg">Conversión g <-> mg</button>
-            </div>
-        </div>
-        <!-- Fin de Selección de Cálculo -->
-
-        <input type="hidden" id="calcTypeHidden"> <!-- Campo oculto para guardar la selección -->
+        <label for="calcType">Seleccione el cálculo</label>
+        <select id="calcType" onchange="renderInputs()" required>
+            <option value="" disabled selected hidden>— Elija una opción —</option>
+            <optgroup label="Pérdidas Insensibles">
+                <option value="normo">P.I. (Normotérmico)</option>
+                <option value="hiper">P.I. (Hipertermia)</option>
+                <option value="venti">P.I. con ventilador</option>
+                <option value="quemaduras">P.I. en quemaduras</option>
+                <option value="perdidasPedia">P.I. pediátricas (BSA)</option>
+                <option value="perdidasNeo">P.I. en neonatos</option>
+            </optgroup>
+            <optgroup label="Generales / Antropometría">
+                 <option value="scq">SCQ Pediátrico (BSA)</option>
+                 <option value="imc">Índice de Masa Corporal (IMC)</option>
+            </optgroup>
+             <optgroup label="Hemodinamia">
+                 <option value="pam">Presión Arterial Media (PAM)</option>
+                 <option value="pvc">Presión Venosa Central (PVC) - Info</option>
+             </optgroup>
+             <optgroup label="Dosificación Medicamentos">
+                 <option value="dosisVol">Volumen de Medicamento</option>
+                 <option value="dosisPeso">Dosis por Peso</option>
+             </optgroup>
+             <optgroup label="Infusiones IV">
+                 <option value="velocidadInf">Velocidad Infusión (mL/hr)</option>
+                 <option value="calculoGoteo">Cálculo de Goteo (gotas/min)</option>
+             </optgroup>
+             <optgroup label="Soluciones Glucosadas">
+                 <option value="mixGlucosa">Mezcla Glucosadas (% Obj)</option>
+                 <option value="gir">Tasa Infusión Glucosa (TIG / GIR)</option>
+                 <option value="volGlucosa">Volumen para Gramos Glucosa</option>
+             </optgroup>
+             <optgroup label="Soluciones Salinas">
+                 <option value="mix">Mezcla Salinas (Na⁺ Obj)</option>
+             </optgroup>
+             <optgroup label="Conversiones">
+                 <option value="convMgMcg">Conversión mg &lt;-&gt; mcg</option>
+                 <option value="convGMg">Conversión g &lt;-&gt; mg</option>
+             </optgroup>
+        </select>
 
         <form id="formulario" onsubmit="event.preventDefault(); calcular();">
             <!-- Inputs will be rendered here by JavaScript -->
-            <!-- Añadimos un mensaje inicial -->
-            <p id="formPlaceholder" style="text-align: center; color: #718096; margin-top: 2rem; font-style: italic;">Seleccione un tipo de cálculo arriba para ver los campos necesarios.</p>
         </form>
         <div id="formulaDisplayArea">
             <!-- Formula or Info will be rendered here by JavaScript -->
         </div>
 
-        <button id="calcBtn" type="button" onclick="calcular()">Calcular</button> <!-- Se mostrará/ocultará con JS -->
+        <button id="calcBtn" type="button" onclick="calcular()">Calcular</button>
         <div id="result">
-             <!-- Result will be displayed here --> <!-- Se mostrará/ocultará con JS -->
+             <!-- Result will be displayed here -->
         </div>
 
         <p class="disclaimer"><small>⚠️ Uso exclusivamente educativo. Verifique siempre los resultados y fórmulas con protocolos clínicos oficiales y el juicio clínico.</small></p>
@@ -684,8 +575,8 @@
     </div>
 </div>
 
-<!-- Asegúrate que la ruta al script es relativa o correcta para tu despliegue -->
-<script src="./script.js"></script>
+
+<script src="script.js"></script>
 
 </body>
 </html>
