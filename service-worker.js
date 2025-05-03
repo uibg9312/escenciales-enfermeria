@@ -9,7 +9,6 @@ const urlsToCache = [
   // '/script.js', // No necesario si está inline
   // --- Añade aquí las rutas EXACTAS a tus iconos ---
   '/icons/icon-128x128.png',
-  '/icons/icon-192x192.png',
   '/icons/icon-256x256.png',
   '/icons/icon-512x512.png'
   // Añade cualquier otra imagen o recurso estático que uses y quieras offline
