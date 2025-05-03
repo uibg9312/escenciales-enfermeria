@@ -2,24 +2,30 @@
   "name": "Herramientas Médicas + NANDA",
   "short_name": "MedTools",
   "description": "Calculadora médica y buscador de etiquetas NANDA para profesionales de la salud.",
-  "start_url": "/index.html", 
-  "display": "standalone", 
-  "background_color": "#2c5282", 
-  "theme_color": "#2c5282", 
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#2c5282",
+  "theme_color": "#2c5282",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icons/icon-128x128.png", // Asegúrate que este archivo exista
+      "src": "/icons/icon_128x128.png", // Corregido: guion bajo
       "sizes": "128x128",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-256x256.png", // Asegúrate que este archivo exista
+      "src": "/icons/icon_192x192.png", // Añadido y Corregido: guion bajo
+      "sizes": "192x192",
+      "type": "image/png",
+       "purpose": "any maskable" // Opcional: si el icono es apto para máscaras
+    },
+    {
+      "src": "/icons/icon_256x256.png", // Corregido: guion bajo
       "sizes": "256x256",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512x512.png", // Ícono para pantalla de bienvenida y Play Store
+      "src": "/icons/icon_512x512.png", // Corregido: guion bajo
       "sizes": "512x512",
       "type": "image/png"
     }
