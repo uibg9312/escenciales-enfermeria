@@ -3,6 +3,14 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<!-- Enlace al Web App Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Color de la barra de estado/navegador (para coherencia) -->
+<meta name="theme-color" content="#2c5282">
+
+<!-- Icono para iOS -->
+<link rel="apple-touch-icon" href="./icons/icon-192x192.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Herramientas Médicas v1.3.1 + NANDA v3.1</title>
 <style>
@@ -569,6 +577,20 @@
 
 
 <script>
+
+    if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js') // Asegúrate que la ruta es correcta
+        .then(registration => {
+          console.log('ServiceWorker registrado con éxito con scope: ', registration.scope);
+        })
+        .catch(error => {
+          console.log('Fallo en el registro del ServiceWorker: ', error);
+        });
+    });
+  }
+
+  
     // --- TAB SWITCHING LOGIC ---
     const btnCalcTab = document.getElementById('btnCalcTab');
     const btnNandaTab = document.getElementById('btnNandaTab');
