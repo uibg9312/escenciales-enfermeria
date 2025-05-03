@@ -14,11 +14,6 @@
       "type": "image/png"
     },
     {
-      "src": "./icons/icon-192x192.png", // Ícono principal para Android
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
       "src": "./icons/icon-256x256.png", // Asegúrate que este archivo exista
       "sizes": "256x256",
       "type": "image/png"
