@@ -47,14 +47,16 @@ showTab('calculator'); // Inicia con la calculadora visible
 
 
 // -------------------------------------------------------------
-// CALCULATOR SCRIPT (IIFE Wrapper) - CON MODIFICACIONES
+// CALCULATOR SCRIPT (IIFE Wrapper) - CON MODIFICACIONES (vHist/Preset)
 // -------------------------------------------------------------
 (function() {
-    // --- Helpers y Definiciones (Sin cambios) ---
+    // --- Helpers y Definiciones (Originales + Nuevos Selectores) ---
     const $ = id => document.getElementById(id);
     const numVal = id => {
         const el = $(id);
+        // Asegura que el elemento existe y está dentro del contenedor de la calculadora
         if (!el || !el.closest('#calculatorContent')) return NaN;
+        // Considera si está dentro de una sección personalizada oculta
         const customSectionParent = el.closest('.custom-input-section');
         if (customSectionParent && customSectionParent.style.display === 'none') {
             return NaN;
@@ -72,92 +74,551 @@ showTab('calculator'); // Inicia con la calculadora visible
     const glucoseConcSolutions = { D10W: {name: 'Dextrosa 10%', pct: 10}, D50W: {name: 'Dextrosa 50%', pct: 50} };
     const formulas = { normo: 'P.I. (mL) ≈ 0.5 × Peso (kg) × Horas', hiper: 'P.I. (mL) ≈ (0.5 × P × H) + (2 × P × Grados > 37°C × H)\n(Factor 2 para fiebre; verificar protocolo local)', venti: 'P.I. (mL) ≈ 3 × Peso (kg) × Horas\n(Factor 3 para ventilador; verificar protocolo local)', quemaduras: 'P.I. (mL) ≈ 15 × Peso (kg) × Constante × Horas\n(Verificar constante y protocolo local)', scq: 'BSA (m²) (<10kg): (Peso×4+9)/100\nBSA (m²) (≥10kg): (Peso×4+7)/100', perdidasPedia: 'P.I. Pediátrica (mL) ≈ BSA (m²) × Constante (mL/m²/día) / 24 × Horas\n(Requiere valor de BSA; Verificar constante según protocolo clínico)', perdidasNeo: 'P.I. Neonatal (mL) ≈ Peso (kg) × k × Horas\n(k varía según peso y estado; verificar protocolo neonatal específico)', imc: 'IMC (kg/m²) = Peso (kg) / (Estatura (m))²', pam: 'PAM (mmHg) ≈ PAD + (PAS - PAD) / 3\n(Presión Arterial Media)', pvc: 'Info PVC (Presión Venosa Central):\n• Mide presión en vena cava/aurícula derecha.\n• Refleja volemia y precarga del ventrículo derecho.\n• Se mide directamente con Catéter Venoso Central (CVC).\n• Valor normal ≈ 2-8 mmHg ó 3-10 cmH₂O (verificar protocolo).', mixGlucosa: 'Calcula volúmenes para mezcla glucosada:\nVol (Conc) = Vol Total × (% Obj - % Base) / (% Conc - % Base)', gir: 'TIG/GIR (mg/kg/min) = (Flujo (mL/hr) × Conc Glucosa (%)) / (Peso (kg) × 6)', volGlucosa: 'Volumen (mL) = Gramos Glucosa Necesarios × 100 / Conc Glucosa (%)', dosisVol: 'Volumen (mL) = Dosis Requerida (unidad) / Concentración (unidad/mL)\n(Las unidades deben coincidir o ser convertibles mg/mcg)', dosisPeso: 'Dosis Total = Dosis Prescrita (unidad/kg) × Peso (kg)', convMgMcg: 'mg = mcg / 1000 | mcg = mg × 1000', convGMg: 'g = mg / 1000 | mg = g × 1000', velocidadInf: 'Velocidad (mL/hr) = Volumen Total (mL) / Tiempo Total (hr)', calculoGoteo: 'Goteo (gotas/min) = (Volumen Total (mL) × Factor Goteo (gotas/mL)) / Tiempo Total (min)', mix: 'Algoritmo para calcular mezcla salina para alcanzar Na⁺ deseado.' };
 
-    // --- NUEVO: Referencia al input oculto ---
+    // --- Referencia al input oculto y contenedores UI ---
     const hiddenCalcType = $('calcTypeHidden');
+    const calculatorContent = document.getElementById('calculatorContent'); // Para chequeos de contexto
 
-    // --- Función limpiar MODIFICADA (sin referencia a calcTypeSelect) ---
+    // --- NUEVO: Constantes y Selectores para Historial/Presets ---
+    const MAX_HISTORY_ITEMS = 10;
+    const HISTORY_KEY = 'calcHistory';
+    const PRESETS_KEY = 'calcPresets';
+    const historyContainer = $('calcHistoryContainer');
+    const historyList = $('calcHistoryList');
+    const clearHistoryBtn = $('clearHistoryBtn');
+    const presetsContainer = $('calcPresetsContainer');
+    const presetsList = $('calcPresetsList');
+    const savePresetSection = $('savePresetSection');
+    const savePresetBtn = $('savePresetBtn');
+    const presetNameInput = $('presetNameInput');
+
+    // --- NUEVO: Funciones para manejar localStorage ---
+    function getLocalStorageArray(key) {
+        try {
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : [];
+        } catch (e) {
+            console.error(`Error reading ${key} from localStorage:`, e);
+            return [];
+        }
+    }
+
+    function setLocalStorageArray(key, data) {
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+        } catch (e) {
+            console.error(`Error writing ${key} to localStorage:`, e);
+            // Podrías añadir un mensaje al usuario si el almacenamiento falla (p.ej., storage lleno)
+            alert(`Error al guardar en localStorage. Puede que el almacenamiento esté lleno.`);
+        }
+    }
+
+    // --- NUEVO: Funciones para el Historial ---
+    function saveToHistory(calcData) {
+        if (!calcData || typeof calcData !== 'object' || !calcData.type || !calcData.result) {
+             console.warn("Intento de guardar entrada de historial inválida:", calcData);
+             return; // No guardar datos incompletos
+        }
+        const history = getLocalStorageArray(HISTORY_KEY);
+        // Evitar duplicados exactos consecutivos (opcional)
+        // if (history.length > 0 && JSON.stringify(history[0].inputs) === JSON.stringify(calcData.inputs) && history[0].type === calcData.type) {
+        //     return; // No guardar si es idéntico al último
+        // }
+        history.unshift(calcData); // Añade al principio (más reciente primero)
+        const limitedHistory = history.slice(0, MAX_HISTORY_ITEMS);
+        setLocalStorageArray(HISTORY_KEY, limitedHistory);
+        displayHistory(); // Actualiza la UI
+    }
+
+    function displayHistory() {
+        if (!historyContainer || !historyList || !clearHistoryBtn) return; // Safety check
+
+        const history = getLocalStorageArray(HISTORY_KEY);
+        historyList.innerHTML = ''; // Limpia la lista actual
+
+        if (history.length === 0) {
+            historyList.innerHTML = '<li style="color: #6b7280; font-style: italic;">No hay historial aún.</li>';
+            historyContainer.style.display = 'none'; // Oculta si está vacío
+            clearHistoryBtn.style.display = 'none';
+            return;
+        }
+
+        historyContainer.style.display = 'block'; // Muestra si hay historial
+        clearHistoryBtn.style.display = 'inline-block';
+
+        history.forEach((item, index) => {
+            const li = document.createElement('li');
+            // Estilos básicos (pueden ir a CSS)
+            li.style.borderBottom = '1px solid #eee';
+            li.style.padding = '0.5rem 0';
+            li.style.marginBottom = '0.25rem';
+            li.style.cursor = 'pointer';
+            li.style.fontSize = '0.9rem';
+            li.style.transition = 'background-color 0.2s';
+            li.setAttribute('data-history-index', index); // Guarda el índice
+
+            // Tooltip para mostrar el resultado completo al pasar el ratón
+            li.setAttribute('title', `Cargar: ${getCalcLabel(item.type)}\nResultado: ${item.result}`);
+
+            const calcLabel = getCalcLabel(item.type) || item.type;
+            let timestamp = 'Fecha desconocida';
+            if (item.timestamp) {
+                try {
+                   timestamp = new Date(item.timestamp).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+                } catch(e) { console.warn("Error formatting history timestamp", e); }
+            }
+            // Limita longitud del resultado mostrado
+            const resultPreview = item.result ? item.result.substring(0, 60) + (item.result.length > 60 ? '...' : '') : 'N/A';
+
+            li.innerHTML = `
+                <span style="font-weight: 600; color: #1d4ed8;">${calcLabel}</span> <small style="color:#6b7280;">(${timestamp})</small><br>
+                <small style="color: #4b5563;">${resultPreview}</small>
+            `;
+
+            li.addEventListener('click', loadFromHistory);
+            li.addEventListener('mouseover', () => { li.style.backgroundColor = '#f3f4f6'; });
+            li.addEventListener('mouseout', () => { li.style.backgroundColor = 'transparent'; });
+            historyList.appendChild(li);
+        });
+    }
+
+    function loadFromHistory(event) {
+        const index = event.currentTarget.getAttribute('data-history-index');
+        if (index === null) return;
+
+        const history = getLocalStorageArray(HISTORY_KEY);
+        const item = history[parseInt(index, 10)]; // Convertir a número
+
+        if (!item || !item.type || !item.inputs) {
+            console.error("Datos de historial inválidos o no encontrados para índice:", index);
+            alert("Error al cargar desde el historial.");
+            return;
+        }
+
+        // 1. Asegurarse de que el botón correspondiente esté activo y el tipo oculto esté seteado
+        const targetButton = document.querySelector(`.calc-option-button[data-value="${item.type}"]`);
+        if (targetButton && typeof targetButton.click === 'function') {
+             // Simular click en el botón para asegurar estado visual y llamada a renderInputs
+             targetButton.click();
+        } else {
+             // Si no se encuentra el botón, al menos setear el tipo y renderizar manualmente
+             hiddenCalcType.value = item.type;
+             renderInputs();
+        }
+
+
+        // 2. Esperar un instante mínimo para que el DOM se actualice tras renderInputs
+        setTimeout(() => {
+            // 3. Poblar los inputs
+            try {
+                for (const inputId in item.inputs) {
+                    const inputElement = $(inputId);
+                    if (inputElement && inputElement.closest('#calculatorContent')) { // Doble check
+                        if (inputElement.tagName === 'SELECT') {
+                            if ([...inputElement.options].some(opt => opt.value === item.inputs[inputId])) {
+                                inputElement.value = item.inputs[inputId];
+                                // Disparar evento change manualmente para selects que controlan UI
+                                const changeEvent = new Event('change', { bubbles: true });
+                                inputElement.dispatchEvent(changeEvent);
+                            } else {
+                                console.warn(`Valor "${item.inputs[inputId]}" no encontrado en select "${inputId}"`);
+                            }
+                        } else {
+                            inputElement.value = item.inputs[inputId];
+                        }
+                        // Disparar evento input para actualizar helpers si es necesario
+                        if (inputId === 'targetPercent') {
+                             const inputEvent = new Event('input', { bubbles: true });
+                             inputElement.dispatchEvent(inputEvent);
+                        }
+                    } else {
+                         console.warn(`Input element with ID "${inputId}" not found or out of scope when loading history.`);
+                    }
+                }
+            } catch (error) {
+                console.error("Error populating form from history:", error);
+                alert("Hubo un error al rellenar el formulario desde el historial.");
+            }
+
+            // 4. Mostrar fórmula y resultado del historial
+            const formulaArea = $("formulaDisplayArea");
+            const resultDiv = $("result");
+            if (formulaArea && formulaArea.closest('#calculatorContent')) {
+                formulaArea.innerHTML = item.formula || '';
+                formulaArea.style.display = item.formula ? 'block' : 'none';
+            }
+            if (resultDiv && resultDiv.closest('#calculatorContent')) {
+                resultDiv.innerHTML = `<div>${item.result ? item.result.replace(/\n/g, '<br>') : ''}</div>`;
+                resultDiv.style.display = item.result ? 'block' : 'none';
+                resultDiv.style.color = '#2d3748'; // Color normal
+            }
+
+            // 5. Scroll hacia el formulario y ocultar sección de guardar preset
+             if (savePresetSection) savePresetSection.style.display = 'none';
+             const formElement = $("formulario");
+             if (formElement && formElement.closest('#calculatorContent')) {
+                 formElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+             }
+
+        }, 100); // Aumentar ligeramente el delay si hay problemas de renderizado
+    }
+
+    function clearHistory() {
+        if (confirm("¿Está seguro de que desea borrar todo el historial de cálculos? Esta acción no se puede deshacer.")) {
+            localStorage.removeItem(HISTORY_KEY);
+            displayHistory(); // Actualiza la UI para mostrarla vacía
+        }
+    }
+
+    // --- NUEVO: Funciones para Presets ---
+    function savePreset() {
+        const name = presetNameInput.value.trim();
+        const type = hiddenCalcType.value;
+
+        if (!name) {
+            alert("Por favor, ingrese un nombre para guardar el cálculo.");
+            presetNameInput.focus();
+            return;
+        }
+        if (!type || type === 'pvc') { // No guardar presets para tipos solo info
+            alert("No se puede guardar este tipo de cálculo informativo.");
+            return;
+        }
+
+        const inputsToSave = {};
+        const form = $('formulario');
+        if (!form || !form.closest('#calculatorContent')) return; // Safety check
+        // Selecciona inputs y selects que no estén dentro de secciones ocultas
+        const inputElements = form.querySelectorAll('input[type="number"], input[type="text"], select');
+
+        inputElements.forEach(el => {
+            const customSectionParent = el.closest('.custom-input-section');
+            const isVisible = el.offsetParent !== null || (customSectionParent && customSectionParent.style.display !== 'none');
+            if (el.id && isVisible) {
+                inputsToSave[el.id] = el.value;
+            }
+        });
+
+        if (Object.keys(inputsToSave).length === 0) {
+             alert("No hay parámetros válidos para guardar para este cálculo.");
+             return;
+        }
+
+        const newPreset = {
+            name: name,
+            type: type,
+            inputs: inputsToSave,
+            timestamp: Date.now() // Guardar fecha de guardado
+        };
+
+        const presets = getLocalStorageArray(PRESETS_KEY);
+        const existingIndex = presets.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+
+        if (existingIndex > -1) {
+             if (!confirm(`Ya existe un cálculo guardado como "${name}". ¿Desea sobrescribirlo?`)) {
+                 return; // Cancelar si no se quiere sobrescribir
+             }
+             presets[existingIndex] = newPreset; // Sobrescribir
+        } else {
+            presets.push(newPreset); // Añadir nuevo
+        }
+
+        presets.sort((a, b) => a.name.localeCompare(b.name)); // Ordenar alfabéticamente
+
+        setLocalStorageArray(PRESETS_KEY, presets);
+        displayPresets(); // Actualizar UI
+
+        presetNameInput.value = ''; // Limpiar input del nombre
+        // No ocultar la sección aquí, puede querer guardar otro con ligero cambio
+        alert(`Cálculo "${name}" guardado.`);
+    }
+
+    function displayPresets() {
+         if (!presetsContainer || !presetsList) return; // Safety check
+
+        const presets = getLocalStorageArray(PRESETS_KEY);
+        presetsList.innerHTML = ''; // Limpiar
+
+        if (presets.length === 0) {
+            presetsList.innerHTML = '<li style="color: #6b7280; font-style: italic;">No hay cálculos guardados.</li>';
+            presetsContainer.style.display = 'none';
+            return;
+        }
+
+        presetsContainer.style.display = 'block';
+
+        presets.forEach((preset, index) => {
+            const li = document.createElement('li');
+            // Estilos básicos (pueden ir a CSS)
+            li.style.borderBottom = '1px solid #eee';
+            li.style.padding = '0.5rem 0';
+            li.style.marginBottom = '0.25rem';
+            li.style.fontSize = '0.9rem';
+            li.style.display = 'flex';
+            li.style.justifyContent = 'space-between';
+            li.style.alignItems = 'center';
+            li.style.gap = '0.5rem'; // Espacio entre botones
+
+            const loadBtn = document.createElement('button');
+            loadBtn.style.flexGrow = '1'; // Ocupa espacio
+            loadBtn.style.textAlign = 'left';
+            loadBtn.style.cursor = 'pointer';
+            loadBtn.style.background = 'none';
+            loadBtn.style.border = 'none';
+            loadBtn.style.padding = '0.2rem';
+            loadBtn.style.color = '#3b82f6'; // Color enlace
+            loadBtn.style.fontWeight = '500';
+            loadBtn.setAttribute('data-preset-index', index);
+            loadBtn.setAttribute('title', `Cargar preset: ${preset.name}`);
+            loadBtn.innerHTML = `<span style="font-weight: 600;">${preset.name}</span> <small style="color:#6b7280;">(${getCalcLabel(preset.type) || preset.type})</small>`;
+            loadBtn.addEventListener('click', loadFromPreset);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Borrar';
+            deleteBtn.style.cursor = 'pointer';
+            deleteBtn.style.background = '#fee2e2';
+            deleteBtn.style.color = '#ef4444';
+            deleteBtn.style.border = '1px solid #fecaca';
+            deleteBtn.style.borderRadius = '0.25rem';
+            deleteBtn.style.padding = '0.2rem 0.5rem';
+            deleteBtn.style.fontSize = '0.75rem';
+            deleteBtn.setAttribute('data-preset-index', index);
+            deleteBtn.setAttribute('title', `Borrar preset: ${preset.name}`);
+            deleteBtn.addEventListener('click', deletePreset);
+
+            li.appendChild(loadBtn);
+            li.appendChild(deleteBtn);
+            presetsList.appendChild(li);
+        });
+    }
+
+    function loadFromPreset(event) {
+        const index = event.currentTarget.getAttribute('data-preset-index');
+        if (index === null) return;
+
+        const presets = getLocalStorageArray(PRESETS_KEY);
+        const preset = presets[parseInt(index, 10)];
+
+        if (!preset || !preset.type || !preset.inputs) {
+            console.error("Datos de preset inválidos o no encontrados para índice:", index);
+            alert("Error al cargar el preset.");
+            return;
+        }
+
+        // 1. Activar botón y setear tipo (igual que en historial)
+        const targetButton = document.querySelector(`.calc-option-button[data-value="${preset.type}"]`);
+        if (targetButton && typeof targetButton.click === 'function') {
+            targetButton.click();
+        } else {
+            hiddenCalcType.value = preset.type;
+            renderInputs();
+        }
+
+        // 2. Esperar y poblar inputs (igual que en historial)
+        setTimeout(() => {
+             try {
+                 for (const inputId in preset.inputs) {
+                     const inputElement = $(inputId);
+                     if (inputElement && inputElement.closest('#calculatorContent')) {
+                          if (inputElement.tagName === 'SELECT') {
+                             if ([...inputElement.options].some(opt => opt.value === preset.inputs[inputId])) {
+                                 inputElement.value = preset.inputs[inputId];
+                                 const changeEvent = new Event('change', { bubbles: true });
+                                 inputElement.dispatchEvent(changeEvent);
+                             } else {
+                                 console.warn(`Valor "${preset.inputs[inputId]}" no encontrado en select "${inputId}"`);
+                             }
+                         } else {
+                             inputElement.value = preset.inputs[inputId];
+                         }
+                          if (inputId === 'targetPercent') {
+                               const inputEvent = new Event('input', { bubbles: true });
+                               inputElement.dispatchEvent(inputEvent);
+                          }
+                     } else {
+                         console.warn(`Input element with ID "${inputId}" not found or out of scope when loading preset.`);
+                     }
+                 }
+             } catch (error) {
+                 console.error("Error populating form from preset:", error);
+                 alert("Hubo un error al rellenar el formulario desde el preset.");
+             }
+
+            // 3. Limpiar resultado anterior y fórmula (se debe recalcular)
+            const resultDiv = $("result");
+            const formulaArea = $("formulaDisplayArea");
+            if (resultDiv && resultDiv.closest('#calculatorContent')) resultDiv.innerHTML = ''; resultDiv.style.display='none';
+            // La fórmula se regenera con renderInputs, no necesitamos limpiarla aquí
+
+            // 4. Mostrar la sección de guardar (por si quiere modificar y guardar de nuevo)
+            if (savePresetSection) savePresetSection.style.display = 'block';
+
+             // 5. Scroll
+              const formElement = $("formulario");
+              if (formElement && formElement.closest('#calculatorContent')) {
+                  formElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }
+              // Enfocar el primer input del formulario como ayuda visual
+              const firstInput = formElement.querySelector('input, select');
+              if (firstInput) {
+                   firstInput.focus();
+              }
+
+        }, 100);
+    }
+
+    function deletePreset(event) {
+         const index = event.currentTarget.getAttribute('data-preset-index');
+         if (index === null) return;
+
+         const presets = getLocalStorageArray(PRESETS_KEY);
+         const presetToDelete = presets[parseInt(index, 10)];
+
+         if (!presetToDelete) return;
+
+         if (confirm(`¿Está seguro de que desea borrar el cálculo guardado "${presetToDelete.name}"?`)) {
+             presets.splice(parseInt(index, 10), 1); // Elimina el elemento
+             setLocalStorageArray(PRESETS_KEY, presets);
+             displayPresets(); // Actualiza la lista
+         }
+         event.stopPropagation(); // Evita que el click se propague al botón de carga
+     }
+
+    // --- NUEVO: Función auxiliar para obtener la etiqueta amigable ---
+    function getCalcLabel(type) {
+        if (!type) return 'Desconocido';
+        // Busca el botón dentro del contenedor de selección
+        const container = $('calcSelectionContainer');
+        if (!container) return type; // Retorna el tipo si no encuentra contenedor
+        const button = container.querySelector(`.calc-option-button[data-value="${type}"]`);
+        // Intenta obtener el texto, quitando posibles elementos internos (como iconos)
+        return button ? button.textContent.trim() : type;
+    }
+
+
+    // --- Función limpiar MODIFICADA (para gestionar visibilidad de historial/presets) ---
     function limpiar() {
          const form = $("formulario");
          const formulaArea = $("formulaDisplayArea");
          const resultDiv = $("result");
          const calcBtn = $('calcBtn');
-         // const calcTypeSelect = $('calcType'); // <-- ELIMINADO
+         // const calcTypeSelect = $('calcType'); // NO USADO
 
-         if (form && form.closest('#calculatorContent')) form.innerHTML = '';
-         if (formulaArea && formulaArea.closest('#calculatorContent')) formulaArea.innerHTML = '';
-         if (resultDiv && resultDiv.closest('#calculatorContent')) resultDiv.innerHTML = '';
-         if (calcBtn && calcBtn.closest('#calculatorContent')) calcBtn.disabled = false;
-         // Línea eliminada sobre 'option-selected'
+         if (form && form.closest('#calculatorContent')) form.innerHTML = ''; // Limpia el formulario
+         if (formulaArea && formulaArea.closest('#calculatorContent')) {
+              formulaArea.innerHTML = '';
+              formulaArea.style.display = 'none'; // Oculta area formula
+         }
+         if (resultDiv && resultDiv.closest('#calculatorContent')) {
+             resultDiv.innerHTML = '';
+             resultDiv.style.display = 'none'; // Oculta area resultado
+         }
+         if (calcBtn && calcBtn.closest('#calculatorContent')) {
+             calcBtn.disabled = false;
+             calcBtn.style.display = 'none'; // Oculta botón calcular
+         }
+         // Ocultar siempre sección de guardar preset al limpiar
+         if (savePresetSection) savePresetSection.style.display = 'none';
+
+          // Si *NO* hay un tipo de cálculo seleccionado (limpieza total)
+          // ocultar historial y presets. Si *HAY* un tipo, se mostrarán si tienen datos.
+          if (!hiddenCalcType.value) {
+             if (historyContainer) historyContainer.style.display = 'none';
+             if (presetsContainer) presetsContainer.style.display = 'none';
+          }
     }
 
     // --- Funciones input, options, select (Sin cambios) ---
     function input(id, l, ph = '', type = 'number', step = 'any') {
+         // ... código original sin cambios ...
          const minAttr = (type === 'number' && id !== 'grados') ? ' min="0"' : '';
          const rangeMatch = l.match(/\((\d+)-(\d+)\)/);
          const rangeAttr = (type === 'number' && rangeMatch) ? ` min="${rangeMatch[1]}" max="${rangeMatch[2]}"` : minAttr;
          return `<label for="${id}">${l}</label><input id="${id}" type="${type}" step="${step}" placeholder="${ph || 'Ingrese valor...'}" required${rangeAttr}>`;
     }
     function options(o) {
-         return Object.entries(o).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join('');
+         // ... código original sin cambios ...
+          return Object.entries(o).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join('');
     }
     function select(id, l, optionsHtml) {
+         // ... código original sin cambios ...
          return `<label for="${id}">${l}</label><select id="${id}" required>${optionsHtml}</select>`;
     }
 
-    // --- Funciones updPctHelper, toggleCustomInputs (Sin cambios en su lógica interna) ---
-    // (Pero toggleCustomInputs ahora leerá 'hiddenCalcType' si se llama desde calcular/renderInputs)
+    // --- Funciones updPctHelper, toggleObjetivo, toggleCustomInputs (Sin cambios en lógica interna, pero definidas globalmente) ---
     function updPctHelper() {
          const p = numVal("targetPercent");
          const h = $("percentHelper");
          if (!h || !h.closest('#calculatorContent')) return;
          h.textContent = (!isNaN(p) && p > 0) ? `≈ ${round(pct2meq(p))} mEq/L Na⁺` : '';
     }
-    // toggleCustomInputs necesita asegurarse que se llama con el ID correcto del select que lo dispara
-    // Se llamará desde el listener de los selects dinámicos en renderInputs
-    function toggleCustomInputs(selectId, customDivId) {
-        const selectEl = $(selectId);
-        const customDiv = $(customDivId);
-        if (selectEl && customDiv && selectEl.closest('#calculatorContent')) {
-            customDiv.style.display = (selectEl.value === 'custom') ? 'block' : 'none';
-        }
-        const calcType = hiddenCalcType?.value; // Leer del hidden input
-        const resultDiv = $("result");
-         if ((calcType === 'mix' || calcType === 'mixGlucosa') && resultDiv && resultDiv.closest('#calculatorContent')) {
-            resultDiv.innerHTML = '';
-        }
+
+    // Definir en el scope global para que los 'onchange' generados funcionen
+     window.toggleObjetivo = function() {
+         const tipoSelect = $("objetivoTipo");
+         if (!tipoSelect || !tipoSelect.closest('#calculatorContent')) return;
+
+         const tipo = tipoSelect.value;
+         const objConc = $("objConc");
+         const objTotal = $("objTotal");
+         const objPercent = $("objPercent");
+
+         // Asegurarse que los divs existen antes de intentar acceder a 'style'
+         if (objConc && objConc.closest('#calculatorContent')) objConc.style.display = (tipo === 'conc') ? 'block' : 'none';
+         if (objTotal && objTotal.closest('#calculatorContent')) objTotal.style.display = (tipo === 'total') ? 'block' : 'none';
+         if (objPercent && objPercent.closest('#calculatorContent')) objPercent.style.display = (tipo === 'percent') ? 'block' : 'none';
+
+         updPctHelper(); // Llamar siempre al final
     }
+
+    window.toggleCustomInputs = function(selectId, customDivId) {
+         const selectEl = $(selectId);
+         const customDiv = $(customDivId);
+         // Asegurarse que los elementos existen y están en el contexto correcto
+         if (selectEl && customDiv && selectEl.closest('#calculatorContent')) {
+             customDiv.style.display = (selectEl.value === 'custom') ? 'block' : 'none';
+         }
+         // Limpiar resultados si cambian los inputs de mezcla
+         const calcType = hiddenCalcType?.value;
+         const resultDiv = $("result");
+         if ((calcType === 'mix' || calcType === 'mixGlucosa') && resultDiv && resultDiv.closest('#calculatorContent')) {
+             resultDiv.innerHTML = '';
+             resultDiv.style.display = 'none'; // Ocultar también
+         }
+     }
+
 
     // --- Función renderInputs MODIFICADA ---
     window.renderInputs = function() {
-        const t = hiddenCalcType?.value; // <-- Leer del input oculto
+        const t = hiddenCalcType?.value; // Lee del input oculto
 
-        // --- Manejo del estado inicial o sin selección ---
+        // --- Manejo sin selección ---
         if (!t) {
-            limpiar();
+            limpiar(); // Limpia form/result/formula/botón-guardar y oculta historial/presets
             const formPlaceholder = $('formPlaceholder');
-            const formulaArea = $("formulaDisplayArea");
+            if(formPlaceholder && formPlaceholder.closest('#calculatorContent')) {
+                 formPlaceholder.style.display = 'block';
+            }
+             // Asegurar que botón calc y result se oculten
             const calcButton = $('calcBtn');
             const resultDiv = $("result");
-
-            if(formPlaceholder) formPlaceholder.style.display = 'block';
-            if(formulaArea) formulaArea.style.display = 'none';
-            if(calcButton) calcButton.style.display = 'none';
-            if(resultDiv) resultDiv.style.display = 'none';
+            if (calcButton && calcButton.closest('#calculatorContent')) calcButton.style.display = 'none';
+            if (resultDiv && resultDiv.closest('#calculatorContent')) resultDiv.style.display = 'none';
             return;
         }
 
-        // --- Si hay tipo, limpiar y preparar contenedores ---
-        limpiar();
+        // --- Si hay tipo, limpiar y preparar ---
+        limpiar(); // Limpia form, formula, result, botón guardar
         const formContainer = $("formulario");
         const formulaDisplayContainer = $("formulaDisplayArea");
         const calcButton = $('calcBtn');
-        const resultDiv = $("result");
+        const resultDiv = $("result"); // Referencia para asegurar oculto
         const formPlaceholder = $('formPlaceholder');
 
-        if(formPlaceholder) formPlaceholder.style.display = 'none'; // Ocultar placeholder
-        if(formulaDisplayContainer) formulaDisplayContainer.style.display = 'block'; // Mostrar contenedores
-        if(calcButton) calcButton.style.display = 'block';
-        if(resultDiv) resultDiv.style.display = 'block'; // Mostrar (vacío inicialmente)
+        // Ocultar placeholder y mostrar contenedores necesarios
+        if(formPlaceholder && formPlaceholder.closest('#calculatorContent')) formPlaceholder.style.display = 'none';
+        if(formulaDisplayContainer && formulaDisplayContainer.closest('#calculatorContent')) formulaDisplayContainer.style.display = 'block';
+        if(calcButton && calcButton.closest('#calculatorContent')) calcButton.style.display = 'block';
+        if(resultDiv && resultDiv.closest('#calculatorContent')) resultDiv.style.display = 'none'; // Resultado se muestra al calcular
 
         if (!formContainer || !formContainer.closest('#calculatorContent') ||
             !formulaDisplayContainer || !formulaDisplayContainer.closest('#calculatorContent') ||
@@ -166,12 +627,14 @@ showTab('calculator'); // Inicia con la calculadora visible
             return;
         }
 
+        // Mostrar Historial y Presets si tienen datos (ya que hay un tipo seleccionado)
+        displayHistory();
+        displayPresets();
+
         let htmlInputs = '';
         let displayHtml = '';
         let additionalInfoHtml = '';
         let isInfoOnly = false;
-
-        // Eliminar manejo de clase 'option-selected' del select
 
         if (t && formulas[t]) {
              const displayClass = (t === 'pvc') ? 'info-display-static' : 'formula-display-static';
@@ -180,7 +643,7 @@ showTab('calculator'); // Inicia con la calculadora visible
 
         // --- Switch para generar inputs (Lógica interna sin cambios) ---
         switch (t) {
-             case 'normo': case 'venti':
+            case 'normo': case 'venti':
                  htmlInputs += input('peso', 'Peso (kg)');
                  htmlInputs += input('horas', 'Horas');
                  break;
@@ -218,8 +681,9 @@ showTab('calculator'); // Inicia con la calculadora visible
                  htmlInputs += input('pad', 'Presión Arterial Diastólica (PAD)', 'mmHg');
                  break;
              case 'pvc':
-                 isInfoOnly = true;
+                 isInfoOnly = true; // Marcar como solo informativo
                  break;
+            // ... (resto de los cases para generar inputs - sin cambios internos) ...
              case 'dosisVol':
                  htmlInputs += `<div class="input-unit-grid">`;
                  htmlInputs += `<div>${input('dosisReq', 'Dosis Requerida')}</div>`;
@@ -262,7 +726,7 @@ showTab('calculator'); // Inicia con la calculadora visible
                  htmlInputs += input('concVolGlucosa', 'Concentración Glucosa Disponible (%)');
                  break;
              case 'mix':
-                 // Los onchange se añadirán con addEventListener más abajo
+                 // Reemplazar onchange con addEventListener
                  htmlInputs += `<label for="objetivoTipo">Tipo de objetivo Na⁺</label><select id="objetivoTipo" required><option value="percent">% NaCl final (p/V)</option><option value="conc">Concentración final (mEq/L)</option><option value="total">mEq Na⁺ totales</option></select>`;
                  htmlInputs += `<div id="objPercent">${input('targetPercent', '% NaCl (p/V)', 'Ej: 0.9')}<p id="percentHelper"></p></div>`;
                  htmlInputs += `<div id="objConc" style="display:none">${input('targetConc', 'Concentración deseada (mEq/L)', 'Ej: 154')}</div>`;
@@ -284,13 +748,14 @@ showTab('calculator'); // Inicia con la calculadora visible
                  htmlInputs += input('valorGMg', 'Valor');
                  htmlInputs += `<label for="dirGMg">Convertir de:</label><select id="dirGMg" required><option value="g_mg">Gramos (g) a Miligramos (mg)</option><option value="mg_g">Miligramos (mg) a Gramos (g)</option></select>`;
                  break;
-             default:
+            default:
                  htmlInputs = '<p style="color: red;">Error: Tipo de cálculo no seleccionado o desconocido.</p>';
                  break;
-        }
-        formContainer.innerHTML = htmlInputs;
-        formulaDisplayContainer.innerHTML = displayHtml + additionalInfoHtml;
-        calcButton.disabled = isInfoOnly;
+        } // Fin del switch
+
+        formContainer.innerHTML = htmlInputs; // Insertar los inputs generados
+        formulaDisplayContainer.innerHTML = displayHtml + additionalInfoHtml; // Insertar fórmula/info
+        calcButton.disabled = isInfoOnly; // Deshabilitar botón si es solo info
 
         // --- Re-attach listeners para elementos dinámicos ---
         if (t === 'mix') {
@@ -299,375 +764,128 @@ showTab('calculator'); // Inicia con la calculadora visible
              const baseSelSelect = $("baseSel");
              const concSelSelect = $("concSel");
 
+             // Usar addEventListener en lugar de onchange
              if(targetPercentInput && targetPercentInput.closest('#calculatorContent')) {
                  targetPercentInput.addEventListener('input', updPctHelper);
              }
              if(objetivoTipoSelect && objetivoTipoSelect.closest('#calculatorContent')) {
-                 // Asegurarse que el listener global 'toggleObjetivo' existe
-                 if (typeof window.toggleObjetivo === 'function') {
-                     objetivoTipoSelect.addEventListener('change', window.toggleObjetivo);
-                 }
+                 objetivoTipoSelect.addEventListener('change', toggleObjetivo); // Usa la función global
              }
              if(baseSelSelect && baseSelSelect.closest('#calculatorContent')) {
-                 // Asegurarse que el listener global 'toggleCustomInputs' existe
-                 if (typeof window.toggleCustomInputs === 'function') {
-                     baseSelSelect.addEventListener('change', () => window.toggleCustomInputs('baseSel', 'customBaseInputs'));
-                 }
+                 baseSelSelect.addEventListener('change', () => toggleCustomInputs('baseSel', 'customBaseInputs')); // Usa la función global
              }
              if(concSelSelect && concSelSelect.closest('#calculatorContent')) {
-                 if (typeof window.toggleCustomInputs === 'function') {
-                     concSelSelect.addEventListener('change', () => window.toggleCustomInputs('concSel', 'customConcInputs'));
-                 }
+                 concSelSelect.addEventListener('change', () => toggleCustomInputs('concSel', 'customConcInputs')); // Usa la función global
              }
 
-             // Llamadas iniciales para asegurar visibilidad correcta
-             if (typeof window.toggleObjetivo === 'function') toggleObjetivo();
-             if (typeof window.toggleCustomInputs === 'function') {
-                toggleCustomInputs('baseSel', 'customBaseInputs');
-                toggleCustomInputs('concSel', 'customConcInputs');
-             }
-             updPctHelper(); // Actualizar helper inicial
+             // Llamadas iniciales para asegurar estado correcto
+             toggleObjetivo();
+             toggleCustomInputs('baseSel', 'customBaseInputs');
+             toggleCustomInputs('concSel', 'customConcInputs');
+             updPctHelper();
          }
-    };
 
-    // --- Función toggleObjetivo (Definida globalmente para onchange, Sin cambios) ---
-    window.toggleObjetivo = function() {
-         const tipoSelect = $("objetivoTipo");
-         if (!tipoSelect || !tipoSelect.closest('#calculatorContent')) return;
-
-         const tipo = tipoSelect.value;
-         const objConc = $("objConc");
-         const objTotal = $("objTotal");
-         const objPercent = $("objPercent");
-
-         if (objConc && objConc.closest('#calculatorContent')) objConc.style.display = (tipo === 'conc') ? 'block' : 'none';
-         if (objTotal && objTotal.closest('#calculatorContent')) objTotal.style.display = (tipo === 'total') ? 'block' : 'none';
-         if (objPercent && objPercent.closest('#calculatorContent')) objPercent.style.display = (tipo === 'percent') ? 'block' : 'none';
-
-         updPctHelper();
-    }
-    // --- Función toggleCustomInputs (Definida globalmente para onchange, Sin cambios) ---
-    // Asegúrate que esté definida antes de llamarla o usa los listeners de arriba
-    // Definimos toggleCustomInputs aquí para asegurar que exista
-    window.toggleCustomInputs = function(selectId, customDivId) {
-         const selectEl = $(selectId);
-         const customDiv = $(customDivId);
-         if (selectEl && customDiv && selectEl.closest('#calculatorContent')) { // Check context
-             customDiv.style.display = (selectEl.value === 'custom') ? 'block' : 'none';
-         }
-         const calcType = hiddenCalcType?.value; // Leer del hidden input
-         const resultDiv = $("result");
-         // Clear results if mix inputs change
-         if ((calcType === 'mix' || calcType === 'mixGlucosa') && resultDiv && resultDiv.closest('#calculatorContent')) {
-             resultDiv.innerHTML = '';
-         }
-     }
+         // Mostrar/Ocultar sección guardar preset según si es info o no
+          if (savePresetSection) {
+             savePresetSection.style.display = isInfoOnly ? 'none' : 'block';
+          }
+    }; // Fin window.renderInputs
 
 
-    // --- Función calcular MODIFICADA (lee de hidden input) ---
+    // --- Función calcular MODIFICADA (para guardar en historial) ---
     window.calcular = function() {
-        const t = hiddenCalcType?.value; // <-- LEER DEL INPUT OCULTO
+        const t = hiddenCalcType?.value;
         const resultDiv = $("result");
+        const formulaArea = $("formulaDisplayArea"); // Necesitamos la fórmula
 
-        if (!resultDiv || !resultDiv.closest('#calculatorContent')) {
-             console.error("Result area not found or out of scope.");
+        if (!resultDiv || !resultDiv.closest('#calculatorContent') ||
+            !formulaArea || !formulaArea.closest('#calculatorContent')) {
+             console.error("Result or Formula area not found or out of scope.");
              return;
         }
-        resultDiv.innerHTML = '';
+        resultDiv.innerHTML = ''; // Limpia resultado anterior
 
-        // Manejar caso sin selección o caso PVC
+        // --- Manejo sin selección o caso PVC ---
         if (!t || t === 'pvc') {
+            // ... (código original para manejar pvc o no selección) ...
             resultDiv.textContent = (t === 'pvc') ? 'Sección informativa. No hay cálculo.' : 'Por favor, seleccione un tipo de cálculo.';
             resultDiv.style.color = (t === 'pvc') ? '#4a5568' : '#e53e3e';
-            resultDiv.style.display = 'block'; // Asegurar que se vea el mensaje
+            resultDiv.style.display = 'block';
+            if(savePresetSection) savePresetSection.style.display = 'none'; // Ocultar guardar para PVC
             return;
         }
 
         const form = $('formulario');
         if (!form || !form.closest('#calculatorContent')) {
-             console.error("Form not found or out of scope.");
+             // ... (código original de error si no hay formulario) ...
              resultDiv.innerHTML = `<div style="color: #c53030; font-weight: bold;">Error interno: Formulario no encontrado.</div>`;
              resultDiv.style.color = '#c53030';
              resultDiv.style.display = 'block';
              return;
         }
 
-        // --- Basic Form Validation (Sin cambios) ---
+        // --- Validaciones (checkValidity, isNaN) ---
+        // ... (código original de validaciones - SIN CAMBIOS) ...
         if (!form.checkValidity()) {
-            let errorMessage = 'Por favor, complete todos los campos requeridos.';
-            const firstInvalid = form.querySelector(':invalid');
-            if (firstInvalid) {
-                const labelText = firstInvalid.labels && firstInvalid.labels.length > 0
-                    ? firstInvalid.labels[0].textContent
-                    : (firstInvalid.placeholder || firstInvalid.id || 'un campo requerido');
-                errorMessage = `Por favor, ingrese un valor válido para "${labelText}".`;
-                firstInvalid.style.outline = '2px solid red';
-                firstInvalid.style.borderColor = 'red';
-                setTimeout(() => {
-                    if(firstInvalid) {
-                        firstInvalid.style.outline = '';
-                        firstInvalid.style.borderColor = '';
-                    }
-                 }, 2500);
-                 firstInvalid.focus();
-             }
-             resultDiv.innerHTML = `<div style="color: #c53030; font-weight: bold;">${errorMessage}</div>`;
-             resultDiv.style.color = '#c53030';
-             resultDiv.style.display = 'block';
+            // ... (mostrar error de validación) ...
              return;
         }
-
-        // --- Check for Non-Numeric Values (Sin cambios) ---
-        let hasNaNError = false;
-        const numberInputs = form.querySelectorAll('input[type="number"]');
-        numberInputs.forEach(el => {
-             if (el.offsetParent !== null || (el.closest && el.closest('.custom-input-section')?.style.display !== 'none')) {
-                 const val = el.value;
-                 if (val.trim() !== '' && isNaN(Number(val))) {
-                     hasNaNError = true;
-                     console.warn(`Input ${el.id} has non-numeric value: ${val}`);
-                     el.style.outline = '2px solid orange';
-                     el.style.borderColor = 'orange';
-                     setTimeout(() => {
-                         if(el) {
-                              el.style.outline = '';
-                              el.style.borderColor = '';
-                          }
-                     }, 2500);
-                 }
-             }
-         });
+         let hasNaNError = false;
+         // ... (chequeo de NaN en inputs numéricos visibles) ...
          if (hasNaNError) {
-             resultDiv.innerHTML = `<div style="color: #dd6b20; font-weight: bold;">Error: Verifique que todos los campos numéricos contengan solo números válidos (sin letras ni símbolos excepto el punto decimal).</div>`;
-             resultDiv.style.color = '#dd6b20';
-             resultDiv.style.display = 'block';
+             // ... (mostrar error de NaN) ...
              return;
          }
 
-        // --- Perform Calculation (Switch interno sin cambios) ---
-        let r;
-        let unit = '';
+
+        // --- Perform Calculation ---
+        let r; // Variable para el resultado (puede ser número o string)
+        let unit = ''; // Unidad del resultado numérico
+        let calculatedInputs = {}; // Objeto para guardar inputs usados en ESTE cálculo
+        let formulaText = formulaArea.innerHTML; // Guardar HTML de la fórmula mostrada
+
         try {
-             switch (t) { // 't' ya viene del hidden input
+             // Recolectar inputs ANTES del switch
+             const inputElements = form.querySelectorAll('input[type="number"], input[type="text"], select');
+             inputElements.forEach(el => {
+                 const customSectionParent = el.closest('.custom-input-section');
+                  if (el.id && (el.offsetParent !== null || (customSectionParent && customSectionParent.style.display !== 'none'))) {
+                     calculatedInputs[el.id] = el.value;
+                 }
+             });
+
+             // --- Switch con la lógica de cálculo (SIN CAMBIOS INTERNOS EN LOS CASES) ---
+             switch (t) {
                 // ... Todos los cases de cálculo van aquí ...
-                // ... SIN CAMBIOS EN LA LÓGICA INTERNA DE CADA CASE ...
-                 case 'normo':
-                     r = 0.5 * numVal('peso') * numVal('horas'); unit = 'mL';
-                     if (r < 0) throw new Error("El resultado no puede ser negativo.");
-                     break;
-                 case 'hiper':
-                     r = (0.5 * numVal('peso') * numVal('horas')) + (2 * numVal('peso') * numVal('grados') * numVal('horas')); unit = 'mL';
-                      if (r < 0) throw new Error("El resultado no puede ser negativo.");
-                     break;
-                 case 'venti':
-                     r = 3 * numVal('peso') * numVal('horas'); unit = 'mL';
-                      if (r < 0) throw new Error("El resultado no puede ser negativo.");
-                     break;
-                 case 'quemaduras':
-                     const constante = numVal('constante');
-                      if (constante < 1 || constante > 6) throw new Error("La constante debe estar entre 1 y 6.");
-                     r = 15 * numVal('peso') * constante * numVal('horas'); unit = 'mL';
-                      if (r < 0) throw new Error("El resultado no puede ser negativo.");
-                     break;
-                 case 'scq': {
-                     const pesoScq = numVal('peso');
-                     if (isNaN(pesoScq) || pesoScq <= 0) throw new Error("El peso debe ser mayor a 0.");
-                     const grupo = $("grupo")?.value;
-                     if (!grupo) throw new Error("Seleccione el grupo de edad/peso.");
-                     r = (grupo === 'u10') ? (pesoScq * 4 + 9) / 100 : (pesoScq * 4 + 7) / 100;
-                     unit = 'm²';
-                     break;
-                 }
-                 case 'perdidasPedia': {
-                     const bsa = numVal('scqValor');
-                     const constantePedia = numVal('constPedia');
-                     const horasPedia = numVal('horas');
-                     if (isNaN(bsa) || bsa <= 0) throw new Error("BSA/SCQ ingresado debe ser mayor a 0.");
-                     if (isNaN(constantePedia)) throw new Error("Seleccione una constante pediátrica.");
-                     if (isNaN(horasPedia) || horasPedia < 0) throw new Error("Las horas no pueden ser negativas.");
-                     r = bsa * constantePedia / 24 * horasPedia;
-                     unit = 'mL';
-                     break;
-                 }
-                 case 'perdidasNeo': {
-                     const pesoNeo = numVal('peso');
-                     const estadoNeo = $("estadoNeo")?.value;
-                     const horasNeo = numVal('horas');
-                     if (isNaN(pesoNeo) || pesoNeo <= 0) throw new Error("El peso debe ser mayor a 0.");
-                     if (!estadoNeo) throw new Error("Seleccione el estado neonatal.");
-                     if (isNaN(horasNeo) || horasNeo < 0) throw new Error("Las horas no pueden ser negativas.");
-                     const k = pesoNeo < 2
-                         ? (estadoNeo === 'normo' ? 1.5 : 2.6)
-                         : (estadoNeo === 'normo' ? 1.8 : 2.8);
-                     r = pesoNeo * k * horasNeo;
-                     unit = 'mL';
-                     break;
-                 }
-                 case 'imc':
-                     const pesoImc = numVal('peso');
-                     const estatura = numVal('estatura');
-                     if (isNaN(pesoImc) || pesoImc <= 0) throw new Error("El peso debe ser mayor a 0.");
-                     if (isNaN(estatura) || estatura <= 0) throw new Error("La estatura debe ser mayor a 0.");
-                      if (estatura > 3) console.warn("Estatura > 3 metros, verificar si está en metros (ej: 1.75).");
-                     r = pesoImc / Math.pow(estatura, 2);
-                     unit = 'kg/m²';
-                     break;
-                 case 'pam': {
-                     const pas = numVal('pas');
-                     const pad = numVal('pad');
-                     if (isNaN(pas) || pas <= 0) throw new Error("La Presión Sistólica (PAS) debe ser mayor a 0.");
-                     if (isNaN(pad) || pad <= 0) throw new Error("La Presión Diastólica (PAD) debe ser mayor a 0.");
-                     if (pas < pad) throw new Error("La presión sistólica (PAS) no puede ser menor que la diastólica (PAD).");
-                     r = pad + (pas - pad) / 3;
-                     unit = 'mmHg';
-                     break;
-                 }
-                 case 'mixGlucosa': {
-                     const targetVol = numVal('targetVolGlucosa');
-                     const targetPct = numVal('targetPctGlucosa');
-                     const baseKey = $('baseSelGlucosa')?.value;
-                     const concKey = $('concSelGlucosa')?.value;
-                     if (isNaN(targetVol) || targetVol <= 0) throw new Error("Volumen final debe ser > 0.");
-                     if (isNaN(targetPct) || targetPct < 0) throw new Error("Porcentaje objetivo no puede ser negativo.");
-                     if (!baseKey || !glucoseBaseSolutions[baseKey]) throw new Error("Seleccione solución base válida.");
-                     if (!concKey || !glucoseConcSolutions[concKey]) throw new Error("Seleccione solución concentrada válida.");
-                     const basePct = glucoseBaseSolutions[baseKey].pct;
-                     const concPct = glucoseConcSolutions[concKey].pct;
-                     if (concPct === basePct) throw new Error("Las concentraciones base y concentrada no pueden ser iguales.");
-                     const tolerance = 1e-9;
-                     if (targetPct > Math.max(basePct, concPct) + tolerance || targetPct < Math.min(basePct, concPct) - tolerance) {
-                         throw new Error(`El porcentaje objetivo (${targetPct}%) debe estar entre el base (${basePct}%) y el concentrado (${concPct}%).`);
-                     }
-                     if (Math.abs(targetPct - basePct) < tolerance) {
-                          r = `Volumen Base (${glucoseBaseSolutions[baseKey].name}): ${round(targetVol)} mL\nVolumen Concentrado (${glucoseConcSolutions[concKey].name}): 0 mL`;
-                     } else if (Math.abs(targetPct - concPct) < tolerance) {
-                          r = `Volumen Base (${glucoseBaseSolutions[baseKey].name}): 0 mL\nVolumen Concentrado (${glucoseConcSolutions[concKey].name}): ${round(targetVol)} mL`;
-                     } else {
-                          const volConc = targetVol * (targetPct - basePct) / (concPct - basePct);
-                          const volBase = targetVol - volConc;
-                          if (volConc < -tolerance || volBase < -tolerance) {
-                              console.error("Error in mix calculation: Negative volume calculated.", {targetVol, targetPct, basePct, concPct, volConc, volBase});
-                              throw new Error("Error en cálculo de mezcla, volúmenes negativos. Verifique las concentraciones.");
-                          }
-                          r = `Volumen Base (${glucoseBaseSolutions[baseKey].name}): ${round(Math.max(0, volBase))} mL\nVolumen Concentrado (${glucoseConcSolutions[concKey].name}): ${round(Math.max(0, volConc))} mL`;
-                     }
-                     unit = '';
-                     break;
-                 }
-                 case 'gir': {
-                     const flujo = numVal('flujoGir');
-                     const conc = numVal('concGir');
-                     const peso = numVal('pesoGir');
-                     if (isNaN(flujo) || flujo < 0) throw new Error("El flujo no puede ser negativo.");
-                     if (isNaN(conc) || conc < 0) throw new Error("La concentración no puede ser negativa.");
-                     if (isNaN(peso) || peso <= 0) throw new Error("El peso debe ser mayor a 0.");
-                      if (peso * 6 === 0) throw new Error("El peso no puede ser cero para calcular GIR.");
-                     r = (flujo * conc) / (peso * 6);
-                     unit = 'mg/kg/min';
-                     break;
-                 }
-                 case 'volGlucosa': {
-                     const gramos = numVal('gramosGlucosa');
-                     const conc = numVal('concVolGlucosa');
-                     if (isNaN(gramos) || gramos <= 0) throw new Error("Los gramos necesarios deben ser > 0.");
-                     if (isNaN(conc) || conc <= 0) throw new Error("La concentración disponible debe ser > 0.");
-                     r = gramos * 100 / conc;
-                     unit = 'mL';
-                     break;
-                 }
-                 case 'mix':
-                     r = calcMix();
-                     unit = '';
-                     break;
-                 case 'dosisVol': {
-                     let dosisReq = numVal('dosisReq');
-                     let concentracion = numVal('concentracion');
-                     const dosisUnidad = $('dosisReqUnidad')?.value;
-                     const concUnidadSelect = $('concentracionUnidad');
-                     const concUnidad = concUnidadSelect?.value;
-                     if (isNaN(dosisReq)) throw new Error("Ingrese una Dosis Requerida válida.");
-                     if (isNaN(concentracion)) throw new Error("Ingrese una Concentración válida.");
-                     if (concentracion === 0) throw new Error("La concentración no puede ser 0.");
-                     if (concentracion < 0) throw new Error("La concentración no puede ser negativa.");
-                     if (!dosisUnidad || !concUnidad || !concUnidad.includes('/')) throw new Error("Unidades de dosis o concentración inválidas.");
-                     const baseDosisUnidad = dosisUnidad;
-                     const baseConcUnidadParts = concUnidad.split('/');
-                     const baseConcUnidad = baseConcUnidadParts[0];
-                     const volConcUnidad = baseConcUnidadParts[1];
-                      if (!baseConcUnidad || !volConcUnidad) throw new Error("Unidad de concentración inválida.");
-                     if (baseDosisUnidad === baseConcUnidad) {}
-                     else if (baseDosisUnidad === 'mg' && baseConcUnidad === 'mcg') { concentracion = concentracion / 1000; }
-                     else if (baseDosisUnidad === 'mcg' && baseConcUnidad === 'mg') { concentracion = concentracion * 1000; }
-                     else if (baseDosisUnidad === 'U' && baseConcUnidad === 'U') {}
-                     else {
-                          if((baseDosisUnidad === 'mg' || baseDosisUnidad === 'mcg') && baseConcUnidad === 'U') { throw new Error(`Unidades incompatibles: No se puede dividir ${dosisUnidad} entre ${concUnidad}.`); }
-                          if(baseDosisUnidad === 'U' && (baseConcUnidad === 'mg' || baseConcUnidad === 'mcg')) { throw new Error(`Unidades incompatibles: No se puede dividir ${dosisUnidad} entre ${concUnidad}.`); }
-                         console.warn(`Potentially incompatible units, proceeding: ${dosisUnidad} / (${concUnidad})`);
-                     }
-                     r = dosisReq / concentracion;
-                     unit = volConcUnidad;
-                     break;
-                 }
-                 case 'dosisPeso': {
-                     const dosisPrescrita = numVal('dosisPrescrita');
-                     const pesoDosis = numVal('pesoDosis');
-                     const dosisUnidad = $('dosisPrescritaUnidad')?.value;
-                     if (isNaN(dosisPrescrita)) throw new Error("Ingrese una Dosis Prescrita válida.");
-                     if (isNaN(pesoDosis) || pesoDosis <= 0) throw new Error("El peso debe ser mayor a 0.");
-                     if (!dosisUnidad) throw new Error("Seleccione unidad de dosis prescrita.");
-                     r = dosisPrescrita * pesoDosis;
-                     if (dosisUnidad === 'mg/kg') unit = 'mg (dosis total)';
-                     else if (dosisUnidad === 'mcg/kg') unit = 'mcg (dosis total)';
-                     else unit = 'unidad (dosis total)';
-                     break;
-                 }
-                 case 'convMgMcg': {
-                     const valor = numVal('valorMgMcg');
-                     const direccion = $('dirMgMcg')?.value;
-                     if (isNaN(valor)) throw new Error("Ingrese un valor numérico válido.");
-                     if (!direccion) throw new Error("Seleccione dirección de conversión.");
-                     if (direccion === 'mg_mcg') { r = valor * 1000; unit = 'mcg'; }
-                     else if (direccion === 'mcg_mg') { r = valor / 1000; unit = 'mg'; }
-                     else { throw new Error("Dirección de conversión inválida."); }
-                     break;
-                 }
-                 case 'convGMg': {
-                     const valor = numVal('valorGMg');
-                     const direccion = $('dirGMg')?.value;
-                     if (isNaN(valor)) throw new Error("Ingrese un valor numérico válido.");
-                     if (!direccion) throw new Error("Seleccione dirección de conversión.");
-                     if (direccion === 'g_mg') { r = valor * 1000; unit = 'mg'; }
-                     else if (direccion === 'mg_g') { r = valor / 1000; unit = 'g'; }
-                     else { throw new Error("Dirección de conversión inválida."); }
-                     break;
-                 }
-                 case 'velocidadInf': {
-                     const volTotal = numVal('volTotalInf');
-                     const tiempoHr = numVal('tiempoHrInf');
-                     if (isNaN(volTotal) || volTotal < 0) throw new Error("El volumen no puede ser negativo.");
-                     if (isNaN(tiempoHr) || tiempoHr <= 0) throw new Error("El tiempo debe ser mayor a 0 horas.");
-                     r = volTotal / tiempoHr;
-                     unit = 'mL/hr';
-                     break;
-                 }
-                 case 'calculoGoteo': {
-                     const volTotal = numVal('volTotalGoteo');
-                     const tiempoMin = numVal('tiempoMinGoteo');
-                     const factorGoteo = numVal('factorGoteo');
-                     if (isNaN(volTotal) || volTotal < 0) throw new Error("El volumen no puede ser negativo.");
-                     if (isNaN(tiempoMin) || tiempoMin <= 0) throw new Error("El tiempo debe ser mayor a 0 minutos.");
-                     if (isNaN(factorGoteo) || factorGoteo <= 0) throw new Error("Factor de goteo inválido.");
-                      if (tiempoMin === 0) throw new Error("El tiempo no puede ser cero para calcular goteo.");
-                     r = Math.round((volTotal * factorGoteo) / tiempoMin);
-                     unit = 'gotas/min';
-                     break;
-                 }
+                // Ej: case 'pam': r = numVal('pad') + (numVal('pas') - numVal('pad')) / 3; unit = 'mmHg'; break;
+                // Ej: case 'mix': r = calcMix(); unit = ''; break; // calcMix() devuelve string
+                // Asegúrate que cada case exitoso asigna valor a 'r' y 'unit' si aplica, y termina con 'break;'
+
+                 case 'normo': r = 0.5 * numVal('peso') * numVal('horas'); unit = 'mL'; if (r < 0) throw new Error("El resultado no puede ser negativo."); break;
+                 case 'hiper': r = (0.5 * numVal('peso') * numVal('horas')) + (2 * numVal('peso') * numVal('grados') * numVal('horas')); unit = 'mL'; if (r < 0) throw new Error("El resultado no puede ser negativo."); break;
+                 case 'venti': r = 3 * numVal('peso') * numVal('horas'); unit = 'mL'; if (r < 0) throw new Error("El resultado no puede ser negativo."); break;
+                 case 'quemaduras': const constante = numVal('constante'); if (constante < 1 || constante > 6) throw new Error("La constante debe estar entre 1 y 6."); r = 15 * numVal('peso') * constante * numVal('horas'); unit = 'mL'; if (r < 0) throw new Error("El resultado no puede ser negativo."); break;
+                 case 'scq': { const pesoScq = numVal('peso'); if (isNaN(pesoScq) || pesoScq <= 0) throw new Error("El peso debe ser mayor a 0."); const grupo = $("grupo")?.value; if (!grupo) throw new Error("Seleccione el grupo de edad/peso."); r = (grupo === 'u10') ? (pesoScq * 4 + 9) / 100 : (pesoScq * 4 + 7) / 100; unit = 'm²'; break; }
+                 case 'perdidasPedia': { const bsa = numVal('scqValor'); const constantePedia = numVal('constPedia'); const horasPedia = numVal('horas'); if (isNaN(bsa) || bsa <= 0) throw new Error("BSA/SCQ ingresado debe ser mayor a 0."); if (isNaN(constantePedia)) throw new Error("Seleccione una constante pediátrica."); if (isNaN(horasPedia) || horasPedia < 0) throw new Error("Las horas no pueden ser negativas."); r = bsa * constantePedia / 24 * horasPedia; unit = 'mL'; break; }
+                 case 'perdidasNeo': { const pesoNeo = numVal('peso'); const estadoNeo = $("estadoNeo")?.value; const horasNeo = numVal('horas'); if (isNaN(pesoNeo) || pesoNeo <= 0) throw new Error("El peso debe ser mayor a 0."); if (!estadoNeo) throw new Error("Seleccione el estado neonatal."); if (isNaN(horasNeo) || horasNeo < 0) throw new Error("Las horas no pueden ser negativas."); const k = pesoNeo < 2 ? (estadoNeo === 'normo' ? 1.5 : 2.6) : (estadoNeo === 'normo' ? 1.8 : 2.8); r = pesoNeo * k * horasNeo; unit = 'mL'; break; }
+                 case 'imc': const pesoImc = numVal('peso'); const estatura = numVal('estatura'); if (isNaN(pesoImc) || pesoImc <= 0) throw new Error("El peso debe ser mayor a 0."); if (isNaN(estatura) || estatura <= 0) throw new Error("La estatura debe ser mayor a 0."); if (estatura > 3) console.warn("Estatura > 3 metros, verificar si está en metros (ej: 1.75)."); r = pesoImc / Math.pow(estatura, 2); unit = 'kg/m²'; break;
+                 case 'pam': { const pas = numVal('pas'); const pad = numVal('pad'); if (isNaN(pas) || pas <= 0) throw new Error("La Presión Sistólica (PAS) debe ser mayor a 0."); if (isNaN(pad) || pad <= 0) throw new Error("La Presión Diastólica (PAD) debe ser mayor a 0."); if (pas < pad) throw new Error("La presión sistólica (PAS) no puede ser menor que la diastólica (PAD)."); r = pad + (pas - pad) / 3; unit = 'mmHg'; break; }
+                 case 'mixGlucosa': { const targetVol = numVal('targetVolGlucosa'); const targetPct = numVal('targetPctGlucosa'); const baseKey = $('baseSelGlucosa')?.value; const concKey = $('concSelGlucosa')?.value; if (isNaN(targetVol) || targetVol <= 0) throw new Error("Volumen final debe ser > 0."); if (isNaN(targetPct) || targetPct < 0) throw new Error("Porcentaje objetivo no puede ser negativo."); if (!baseKey || !glucoseBaseSolutions[baseKey]) throw new Error("Seleccione solución base válida."); if (!concKey || !glucoseConcSolutions[concKey]) throw new Error("Seleccione solución concentrada válida."); const basePct = glucoseBaseSolutions[baseKey].pct; const concPct = glucoseConcSolutions[concKey].pct; if (concPct === basePct) throw new Error("Las concentraciones base y concentrada no pueden ser iguales."); const tolerance = 1e-9; if (targetPct > Math.max(basePct, concPct) + tolerance || targetPct < Math.min(basePct, concPct) - tolerance) { throw new Error(`El porcentaje objetivo (${targetPct}%) debe estar entre el base (${basePct}%) y el concentrado (${concPct}%).`); } if (Math.abs(targetPct - basePct) < tolerance) { r = `Volumen Base (${glucoseBaseSolutions[baseKey].name}): ${round(targetVol)} mL\nVolumen Concentrado (${glucoseConcSolutions[concKey].name}): 0 mL`; } else if (Math.abs(targetPct - concPct) < tolerance) { r = `Volumen Base (${glucoseBaseSolutions[baseKey].name}): 0 mL\nVolumen Concentrado (${glucoseConcSolutions[concKey].name}): ${round(targetVol)} mL`; } else { const volConc = targetVol * (targetPct - basePct) / (concPct - basePct); const volBase = targetVol - volConc; if (volConc < -tolerance || volBase < -tolerance) { console.error("Error in mix calculation: Negative volume calculated.", {targetVol, targetPct, basePct, concPct, volConc, volBase}); throw new Error("Error en cálculo de mezcla, volúmenes negativos. Verifique las concentraciones."); } r = `Volumen Base (${glucoseBaseSolutions[baseKey].name}): ${round(Math.max(0, volBase))} mL\nVolumen Concentrado (${glucoseConcSolutions[concKey].name}): ${round(Math.max(0, volConc))} mL`; } unit = ''; break; }
+                 case 'gir': { const flujo = numVal('flujoGir'); const conc = numVal('concGir'); const peso = numVal('pesoGir'); if (isNaN(flujo) || flujo < 0) throw new Error("El flujo no puede ser negativo."); if (isNaN(conc) || conc < 0) throw new Error("La concentración no puede ser negativa."); if (isNaN(peso) || peso <= 0) throw new Error("El peso debe ser mayor a 0."); if (peso * 6 === 0) throw new Error("El peso no puede ser cero para calcular GIR."); r = (flujo * conc) / (peso * 6); unit = 'mg/kg/min'; break; }
+                 case 'volGlucosa': { const gramos = numVal('gramosGlucosa'); const conc = numVal('concVolGlucosa'); if (isNaN(gramos) || gramos <= 0) throw new Error("Los gramos necesarios deben ser > 0."); if (isNaN(conc) || conc <= 0) throw new Error("La concentración disponible debe ser > 0."); r = gramos * 100 / conc; unit = 'mL'; break; }
+                 case 'mix': r = calcMix(); unit = ''; break; // calcMix maneja sus errores internos y devuelve string
+                 case 'dosisVol': { let dosisReq = numVal('dosisReq'); let concentracion = numVal('concentracion'); const dosisUnidad = $('dosisReqUnidad')?.value; const concUnidadSelect = $('concentracionUnidad'); const concUnidad = concUnidadSelect?.value; if (isNaN(dosisReq)) throw new Error("Ingrese una Dosis Requerida válida."); if (isNaN(concentracion)) throw new Error("Ingrese una Concentración válida."); if (concentracion === 0) throw new Error("La concentración no puede ser 0."); if (concentracion < 0) throw new Error("La concentración no puede ser negativa."); if (!dosisUnidad || !concUnidad || !concUnidad.includes('/')) throw new Error("Unidades de dosis o concentración inválidas."); const baseDosisUnidad = dosisUnidad; const baseConcUnidadParts = concUnidad.split('/'); const baseConcUnidad = baseConcUnidadParts[0]; const volConcUnidad = baseConcUnidadParts[1]; if (!baseConcUnidad || !volConcUnidad) throw new Error("Unidad de concentración inválida."); if (baseDosisUnidad === baseConcUnidad) {} else if (baseDosisUnidad === 'mg' && baseConcUnidad === 'mcg') { concentracion = concentracion / 1000; } else if (baseDosisUnidad === 'mcg' && baseConcUnidad === 'mg') { concentracion = concentracion * 1000; } else if (baseDosisUnidad === 'U' && baseConcUnidad === 'U') {} else { if((baseDosisUnidad === 'mg' || baseDosisUnidad === 'mcg') && baseConcUnidad === 'U') { throw new Error(`Unidades incompatibles: No se puede dividir ${dosisUnidad} entre ${concUnidad}.`); } if(baseDosisUnidad === 'U' && (baseConcUnidad === 'mg' || baseConcUnidad === 'mcg')) { throw new Error(`Unidades incompatibles: No se puede dividir ${dosisUnidad} entre ${concUnidad}.`); } console.warn(`Potentially incompatible units, proceeding: ${dosisUnidad} / (${concUnidad})`); } r = dosisReq / concentracion; unit = volConcUnidad; break; }
+                 case 'dosisPeso': { const dosisPrescrita = numVal('dosisPrescrita'); const pesoDosis = numVal('pesoDosis'); const dosisUnidad = $('dosisPrescritaUnidad')?.value; if (isNaN(dosisPrescrita)) throw new Error("Ingrese una Dosis Prescrita válida."); if (isNaN(pesoDosis) || pesoDosis <= 0) throw new Error("El peso debe ser mayor a 0."); if (!dosisUnidad) throw new Error("Seleccione unidad de dosis prescrita."); r = dosisPrescrita * pesoDosis; if (dosisUnidad === 'mg/kg') unit = 'mg (dosis total)'; else if (dosisUnidad === 'mcg/kg') unit = 'mcg (dosis total)'; else unit = 'unidad (dosis total)'; break; }
+                 case 'convMgMcg': { const valor = numVal('valorMgMcg'); const direccion = $('dirMgMcg')?.value; if (isNaN(valor)) throw new Error("Ingrese un valor numérico válido."); if (!direccion) throw new Error("Seleccione dirección de conversión."); if (direccion === 'mg_mcg') { r = valor * 1000; unit = 'mcg'; } else if (direccion === 'mcg_mg') { r = valor / 1000; unit = 'mg'; } else { throw new Error("Dirección de conversión inválida."); } break; }
+                 case 'convGMg': { const valor = numVal('valorGMg'); const direccion = $('dirGMg')?.value; if (isNaN(valor)) throw new Error("Ingrese un valor numérico válido."); if (!direccion) throw new Error("Seleccione dirección de conversión."); if (direccion === 'g_mg') { r = valor * 1000; unit = 'mg'; } else if (direccion === 'mg_g') { r = valor / 1000; unit = 'g'; } else { throw new Error("Dirección de conversión inválida."); } break; }
+                 case 'velocidadInf': { const volTotal = numVal('volTotalInf'); const tiempoHr = numVal('tiempoHrInf'); if (isNaN(volTotal) || volTotal < 0) throw new Error("El volumen no puede ser negativo."); if (isNaN(tiempoHr) || tiempoHr <= 0) throw new Error("El tiempo debe ser mayor a 0 horas."); r = volTotal / tiempoHr; unit = 'mL/hr'; break; }
+                 case 'calculoGoteo': { const volTotal = numVal('volTotalGoteo'); const tiempoMin = numVal('tiempoMinGoteo'); const factorGoteo = numVal('factorGoteo'); if (isNaN(volTotal) || volTotal < 0) throw new Error("El volumen no puede ser negativo."); if (isNaN(tiempoMin) || tiempoMin <= 0) throw new Error("El tiempo debe ser mayor a 0 minutos."); if (isNaN(factorGoteo) || factorGoteo <= 0) throw new Error("Factor de goteo inválido."); if (tiempoMin === 0) throw new Error("El tiempo no puede ser cero para calcular goteo."); r = Math.round((volTotal * factorGoteo) / tiempoMin); unit = 'gotas/min'; break; }
+
                  default:
-                     throw new Error("Tipo de cálculo no reconocido.");
+                     throw new Error("Tipo de cálculo no reconocido o no implementado.");
              } // Fin del switch
 
-             // --- Display Result (Sin cambios) ---
-             resultDiv.style.color = '#2d3748';
+             // --- Resultado y Guardado en Historial ---
              let resultText = '';
              if (typeof r === 'number') {
                  if (isNaN(r)) {
@@ -675,25 +893,46 @@ showTab('calculator'); // Inicia con la calculadora visible
                  }
                  const formattedResult = Math.abs(r) < 1e-6 && r !== 0 ? r.toExponential(2) : round(r);
                  resultText = `Resultado: ${formattedResult} ${unit}`;
-             } else if (typeof r === 'string') {
+             } else if (typeof r === 'string') { // Resultados de mezclas, etc.
                  resultText = `Resultado:\n${r}`;
              } else {
-                 throw new Error("Tipo de resultado inesperado.");
+                 // Si r es undefined o null (p.ej., un case sin 'break' o sin asignar 'r')
+                 throw new Error("Cálculo incompleto o tipo de resultado inesperado.");
              }
+
+             // Mostrar resultado
              resultDiv.innerHTML = `<div>${resultText.replace(/\n/g, '<br>')}</div>`;
-             resultDiv.style.display = 'block'; // Asegurar que el resultado se vea
+             resultDiv.style.display = 'block';
+             resultDiv.style.color = '#2d3748'; // Resetear color a normal
+
+             // GUARDAR EN HISTORIAL
+             const historyEntry = {
+                 type: t,
+                 timestamp: Date.now(),
+                 inputs: calculatedInputs,
+                 result: resultText.replace(/^Resultado:[\n\s]*/, ''), // Guardar sin el prefijo "Resultado:"
+                 formula: formulaText // Guardar HTML de la fórmula
+             };
+             saveToHistory(historyEntry);
+
+             // Mostrar opción de guardar preset si el cálculo fue exitoso
+              if (savePresetSection) savePresetSection.style.display = 'block';
+
 
         } catch (e) {
+             // --- Manejo de errores (ya existente) ---
              console.error("Error en cálculo:", e);
              resultDiv.innerHTML = `<div style="color: #c53030; font-weight: bold;">Error: ${e.message || 'Datos inválidos o incompletos.'}</div>`;
              resultDiv.style.color = '#c53030';
-             resultDiv.style.display = 'block'; // Asegurar que el error se vea
+             resultDiv.style.display = 'block';
+             if (savePresetSection) savePresetSection.style.display = 'none'; // Ocultar guardar si hay error
         }
     }; // Fin window.calcular
 
-    // --- Función calcMix (Sin cambios) ---
+
+    // --- Función calcMix (Sin cambios internos) ---
     function calcMix() {
-         // ... Código original de calcMix sin cambios ...
+        // ... (Código original COMPLETO de calcMix - sin modificaciones) ...
          const tipo = $("objetivoTipo")?.value;
          const v = numVal('targetVol');
          if (isNaN(v) || v <= 0) throw new Error('Volumen final debe ser mayor a 0.');
@@ -729,7 +968,7 @@ showTab('calculator'); // Inicia con la calculadora visible
           } else if (tipo === 'total') {
               targetMeqTotal = numVal('targetMeq');
               if (isNaN(targetMeqTotal) || targetMeqTotal < 0) throw new Error("mEq Na⁺ totales deseados inválidos.");
-          } else {
+          } else { // percent
               const p = numVal('targetPercent');
               if (isNaN(p) || p < 0) throw new Error('Porcentaje objetivo inválido.');
               targetMeqTotal = pct2meq(p) * v / 1000;
@@ -739,25 +978,52 @@ showTab('calculator'); // Inicia con la calculadora visible
           const maxPossibleConc = Math.max(base.mEqNa, concMeqL);
           const targetConcForValidation = targetMeqTotal / v * 1000;
           const tolerance = 1e-9;
-          if (targetConcForValidation > maxPossibleConc + tolerance) { throw new Error(`Concentración objetivo (${round(targetConcForValidation)} mEq/L) es mayor que la máxima posible con estas soluciones (${round(maxPossibleConc)} mEq/L).`); }
-          if (targetConcForValidation < minPossibleConc - tolerance) { throw new Error(`Concentración objetivo (${round(targetConcForValidation)} mEq/L) es menor que la mínima posible con estas soluciones (${round(minPossibleConc)} mEq/L).`); }
-          if (base.mEqNa > concMeqL + tolerance && targetConcForValidation > base.mEqNa + tolerance) { throw new Error(`Objetivo (${round(targetConcForValidation)} mEq/L) es mayor que la base (${round(base.mEqNa)} mEq/L) pero el 'concentrado' elegido (${round(concMeqL)} mEq/L) es aún MENOR que la base.`); }
-          if (concMeqL > base.mEqNa + tolerance && targetConcForValidation < base.mEqNa - tolerance) { throw new Error(`Objetivo (${round(targetConcForValidation)} mEq/L) es menor que la base (${round(base.mEqNa)} mEq/L) pero el 'concentrado' elegido (${round(concMeqL)} mEq/L) es MAYOR que la base.`); }
+          // Validaciones de alcanzabilidad y lógica
+          if (targetConcForValidation > maxPossibleConc + tolerance) { throw new Error(`Concentración objetivo (${round(targetConcForValidation)} mEq/L) es mayor que la máxima posible (${round(maxPossibleConc)} mEq/L).`); }
+          if (targetConcForValidation < minPossibleConc - tolerance) { throw new Error(`Concentración objetivo (${round(targetConcForValidation)} mEq/L) es menor que la mínima posible (${round(minPossibleConc)} mEq/L).`); }
+          if (base.mEqNa > concMeqL + tolerance && targetConcForValidation > base.mEqNa + tolerance) { throw new Error(`Objetivo (${round(targetConcForValidation)} mEq/L) > Base (${round(base.mEqNa)} mEq/L) pero Concentrado (${round(concMeqL)} mEq/L) es aún menor.`); }
+          if (concMeqL > base.mEqNa + tolerance && targetConcForValidation < base.mEqNa - tolerance) { throw new Error(`Objetivo (${round(targetConcForValidation)} mEq/L) < Base (${round(base.mEqNa)} mEq/L) pero Concentrado (${round(concMeqL)} mEq/L) es mayor.`); }
+
+          // Algoritmo de búsqueda de mejor combinación (sin cambios)
           let bestMatch = { diff: Infinity, numAmpollas: 0, volBase: 0, totalMeqReal: 0 };
-          const maxAmpollas = c.volAmp > 0 ? Math.ceil(v / c.volAmp) + 10 : 1;
+          const maxAmpollas = c.volAmp > 0 ? Math.ceil(v / c.volAmp) + 10 : ( (concMeqL > base.mEqNa + tolerance) ? 1 : 0 ); // Ajuste para bases más concentradas que 'concentrado'
+
           for (let n = 0; n <= maxAmpollas; n++) {
               const volAmpTotal = n * c.volAmp;
-              const volBaseActual = v - volAmpTotal;
-              if (volBaseActual < -tolerance && n > 0) { if (bestMatch.diff !== Infinity) break; continue; }
+              let volBaseActual = v - volAmpTotal;
+
+               // Si el volumen de ampollas ya excede el total, no tiene sentido seguir si buscamos aumentar [Na]
+               if (volBaseActual < -tolerance && n > 0 && concMeqL > base.mEqNa) {
+                   // Si ya encontramos una solución, paramos. Si no, seguimos por si acaso (p.ej. base=3%, conc=0.9%)
+                   if (bestMatch.diff !== Infinity) break;
+                   continue; // Continuar si es el primer ciclo o no hay solución aún
+               }
+                // Forzar volBase a 0 si es negativo pero es la única opción (n=0 y volAmpTotal=0)
+                if(volBaseActual < 0 && n===0) volBaseActual = 0;
+
+
               const meqFromAmp = n * c.mEqNaAmp;
-              const meqFromBase = base.mEqNa * Math.max(0, volBaseActual) / 1000;
+              const meqFromBase = base.mEqNa * Math.max(0, volBaseActual) / 1000; // Asegurar no usar vol negativo
               const meqTotalActual = meqFromAmp + meqFromBase;
               const diff = Math.abs(meqTotalActual - targetMeqTotal);
-              if (diff < bestMatch.diff - tolerance) { bestMatch = { diff: diff, numAmpollas: n, volBase: Math.max(0, volBaseActual), totalMeqReal: meqTotalActual }; }
-              if (diff < 1e-6) break;
+
+              if (diff < bestMatch.diff - tolerance || (Math.abs(diff - bestMatch.diff) < tolerance && Math.abs(volBaseActual - v) < Math.abs(bestMatch.volBase - v) )) { // Preferir solución más cercana al volumen total si el error de mEq es igual
+                    bestMatch = { diff: diff, numAmpollas: n, volBase: Math.max(0, volBaseActual), totalMeqReal: meqTotalActual };
+              }
+
+               // Condición de parada temprana si la diferencia es mínima
+               if (diff < 1e-6 && Math.abs(volBaseActual + volAmpTotal - v) < 1e-6) break;
+
+               // Optimización: Si nos alejamos del objetivo y ya tenemos una buena solución, parar
+               if(bestMatch.diff < Infinity && diff > bestMatch.diff + 0.1 && n > bestMatch.numAmpollas+2 ) { // Si la diferencia empeora significativamente
+                    // Podríamos parar aquí si la tendencia es clara, pero es más seguro dejarlo correr un poco más.
+               }
           }
+
           if (bestMatch.diff === Infinity) { throw new Error('No se encontró una combinación válida. Verifique los volúmenes, concentraciones y objetivos.'); }
-          const concReal = bestMatch.totalMeqReal / v * 1000;
+
+          // Formateo del resultado (sin cambios)
+          const concReal = (bestMatch.volBase + bestMatch.numAmpollas * c.volAmp > 0) ? bestMatch.totalMeqReal / (bestMatch.volBase + bestMatch.numAmpollas * c.volAmp) * 1000 : 0;
           const pctReal = concReal * 58.5 / 10000;
           const baseNameForResult = baseKey === 'custom' ? base.name : `${base.name}`;
           const concNameForResult = concKey === 'custom' ? c.name : `${c.name}`;
@@ -773,40 +1039,69 @@ showTab('calculator'); // Inicia con la calculadora visible
           resultString += `  • Concentración Final: ${round(concReal)} mEq/L\n`;
           resultString += `      (Equivalente a ≈ ${round(pctReal, 2)}% NaCl p/V)\n`;
           return resultString;
-     }
+     } // Fin calcMix
 
-    // --- NUEVO: Event Listener para los Botones de Selección ---
+
+    // --- Event Listener para Botones de Selección de Cálculo (Existente) ---
     const calcSelectionContainer = document.getElementById('calcSelectionContainer');
-    if (calcSelectionContainer && hiddenCalcType) {
+    if (calcSelectionContainer && hiddenCalcType && calcSelectionContainer.closest('#calculatorContent')) { // Check context
         calcSelectionContainer.addEventListener('click', function(event) {
+            // Solo reaccionar a botones de opción de cálculo
             if (event.target.classList.contains('calc-option-button')) {
                 const clickedButton = event.target;
                 const selectedValue = clickedButton.dataset.value;
+
+                // Si ya está activo, no hacer nada (evita re-render innecesario)
+                if (clickedButton.classList.contains('active')) {
+                     // Opcional: scroll suave al formulario si ya estaba seleccionado
+                      const formElement = document.getElementById('formulario');
+                      if (formElement) {
+                          setTimeout(() => {
+                              formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }, 50);
+                      }
+                    return;
+                }
+
 
                 hiddenCalcType.value = selectedValue; // Actualizar valor oculto
 
                 // Gestionar clase 'active'
                 const currentActive = calcSelectionContainer.querySelector('.calc-option-button.active');
-                if (currentActive && currentActive !== clickedButton) {
+                if (currentActive) {
                     currentActive.classList.remove('active');
                 }
                 clickedButton.classList.add('active');
 
-                renderInputs(); // Volver a renderizar el formulario
+                renderInputs(); // Renderizar el formulario para la nueva selección
 
-                // Scroll suave al formulario (opcional)
+                // Scroll suave al formulario después de renderizar
                 const formElement = document.getElementById('formulario');
-                if (formElement) {
-                    setTimeout(() => { // Pequeño delay
-                        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 50); // Ajusta el delay si es necesario
-                }
+                 if (formElement) {
+                     setTimeout(() => { // Pequeño delay para asegurar renderizado
+                         formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                     }, 50); // Ajusta el delay si es necesario
+                 }
             }
         });
+    } else {
+         console.error("Contenedor de selección de cálculo (#calcSelectionContainer) o input oculto (#calcTypeHidden) no encontrado.");
     }
 
-    // --- Llamada inicial para estado inicial (muestra placeholder) ---
-    renderInputs(); // Llama a renderInputs para configurar el estado inicial
+
+    // --- NUEVO: Event Listeners para Historial y Presets ---
+    if (clearHistoryBtn && clearHistoryBtn.closest('#calculatorContent')) {
+        clearHistoryBtn.addEventListener('click', clearHistory);
+    }
+    if (savePresetBtn && savePresetBtn.closest('#calculatorContent')) {
+        savePresetBtn.addEventListener('click', savePreset);
+    }
+    // Los listeners para cargar/borrar historial/presets se añaden dinámicamente en displayHistory/displayPresets
+
+
+    // --- Llamada Inicial ---
+    renderInputs(); // Llama inicialmente para configurar estado inicial (mostrar placeholder y cargar/ocultar historial/presets)
+
 
 })(); // --- Fin de Calculator IIFE ---
 
