@@ -19,558 +19,467 @@
   /* --- General Styles & Resets --- */
   *, *:before, *:after {
     box-sizing: border-box;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    /* Use a font stack closer to the screenshot if possible */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   }
 
   body {
     margin: 0;
-    padding: 0; /* Remove body padding, apply to containers */
-    background-color: #f0f4f8; /* Slightly softer blue-gray background */
-    color: #1a202c; /* Darker text */
-    line-height: 1.5;
+    padding: 0;
+    background-color: #f0f4f8; /* Consistent background */
+    color: #2d3748; /* Default text color slightly darker */
+    line-height: 1.6; /* Slightly more line spacing */
   }
 
-  /* --- Tab Navigation --- */
+  /* --- Tab Navigation (Simulating Header) --- */
   .tab-nav {
-    background-color: #2c5282; /* Dark blue background for nav */
-    padding: 0.75rem 2rem;
+    background-color: #3b82f6; /* Brighter blue matching screenshot header */
+    padding: 0.5rem 1rem; /* Adjust padding */
     display: flex;
-    flex-wrap: wrap; /* Allow buttons to wrap on small screens */
-    gap: 0.5rem;
+    gap: 0.5rem; /* Keep gap for spacing */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* Remove flex-wrap if you want them always side-by-side, but wrap is safer */
+    flex-wrap: wrap;
   }
 
-  .tab-nav button {
-    padding: 0.6rem 1.2rem;
+  /* Style specific buttons to look like header sections */
+  .tab-nav button#btnCalcTab,
+  .tab-nav button#btnNandaTab {
+    padding: 0.5rem 1rem;
     cursor: pointer;
-    border: 1px solid transparent; /* Start with transparent border */
-    background-color: #e2e8f0; /* Light gray inactive */
-    color: #4a5568; /* Dark gray text inactive */
-    font-weight: 600;
-    font-size: 0.95rem;
-    border-radius: 0.375rem;
-    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    border: none; /* Remove border */
+    background-color: transparent; /* Transparent background */
+    color: #ffffff; /* White text */
+    font-weight: 500; /* Medium weight */
+    font-size: 0.9rem; /* Adjust size */
+    border-radius: 0.375rem; /* Standard rounding */
+    transition: background-color 0.2s ease-in-out;
+    box-shadow: none; /* Remove individual shadow */
+    /* Add icons simulation if desired (requires more complex CSS or HTML changes) */
+    display: inline-flex; /* For potential icon alignment */
+    align-items: center;
+    gap: 0.4rem;
   }
+   /* Add specific icons via ::before (Example - requires font library or SVG) */
+   /*
+   .tab-nav button#btnCalcTab::before { content: '🧮'; margin-right: 0.3em; }
+   .tab-nav button#btnNandaTab::before { content: '🔍'; margin-right: 0.3em; }
+   */
+   /* Simple search icon simulation for NANDA */
+   .tab-nav button#btnNandaTab::before {
+       content: '';
+       display: inline-block;
+       width: 1em;
+       height: 1em;
+       margin-right: 0.4em;
+       background-color: white; /* Color of the icon */
+       mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>');
+       mask-size: contain;
+       mask-repeat: no-repeat;
+   }
+    /* Simple calculator icon simulation */
+    .tab-nav button#btnCalcTab::before {
+        content: '';
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        margin-right: 0.4em;
+        background-color: white; /* Color of the icon */
+        mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.1 0-2 .9-2 2v13.5a2 2 0 002 2h.5a1.5 1.5 0 100-3h-1.5a.75.75 0 01-.75-.75V8.25a.75.75 0 01.75-.75h4.5a.75.75 0 01.75.75v8.25a.75.75 0 01-.75.75h-1.5a1.5 1.5 0 100 3h.5a2 2 0 002-2V4.25c0-1.1-.9-2-2-2H12z" /></svg>');
+        mask-size: contain;
+        mask-repeat: no-repeat;
+    }
+
 
   .tab-nav button:hover {
-    background-color: #cbd5e0; /* Slightly darker gray on hover */
+    background-color: rgba(255, 255, 255, 0.15); /* Slight white tint on hover */
   }
 
+  /* Remove active state styling if simulating header */
   .tab-nav button.active {
-    background-color: #ffffff; /* White active tab */
-    color: #2c5282; /* Dark blue text active */
-    border: 1px solid #a0aec0; /* Subtle border for active */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background-color: rgba(0, 0, 0, 0.1); /* Slightly darker background for active */
+    /* Optionally add other subtle active indicators */
+    font-weight: 600; /* Slightly bolder when active */
   }
 
    /* --- Content Containers --- */
    .tab-content {
-       padding: 2rem; /* Add padding around the content */
+       padding: 1.5rem; /* Consistent padding */
    }
 
   /* --- Card Container (Calculadora) --- */
   .card {
     background-color: #ffffff;
-    border-radius: 0.75rem;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.03);
-    padding: 2rem;
-    max-width: 700px;
-    margin: 0 auto; /* Center within its container */
-    border: 1px solid #e2e8f0; /* Light border */
+    border-radius: 0.5rem; /* Slightly less rounded */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Subtle shadow */
+    padding: 1.5rem 2rem; /* Adjust padding */
+    max-width: 750px; /* Max width from screenshot */
+    margin: 1rem auto; /* Add some margin */
+    border: 1px solid #e5e7eb; /* Lighter border */
   }
 
   /* --- Typography (Calculadora) --- */
   .card h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin-top: 0; /* Remove top margin if first element */
-    margin-bottom: 1.5rem;
+    font-size: 1.5rem; /* Slightly smaller H1 */
+    font-weight: 600; /* Semi-bold */
+    margin-top: 0;
+    margin-bottom: 0.25rem; /* Reduce space below H1 */
     text-align: center;
-    color: #2c5282; /* Dark blue */
+    color: #1f2937; /* Darker gray */
   }
 
   .card h1 small {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #718096; /* Medium gray */
+    font-size: 0.75rem; /* Smaller version text */
+    font-weight: 400; /* Normal weight */
+    color: #6b7280; /* Medium gray */
     display: block;
-    margin-top: 0.25rem;
+    margin-top: 0.15rem;
+    margin-bottom: 1.5rem; /* Space below version */
   }
 
   .card label {
     display: block;
-    margin-top: 1.25rem;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #4a5568; /* Darker gray */
-    font-size: 0.9rem;
+    margin-top: 1rem; /* Space above label */
+    margin-bottom: 0.3rem; /* Less space below label */
+    font-weight: 500; /* Medium weight */
+    color: #374151; /* Medium-dark gray */
+    font-size: 0.875rem; /* Standard label size */
   }
 
-  .card small {
-    font-size: 0.85rem;
-    color: #718096; /* Medium gray */
-  }
-
-  /* --- Form Elements (Calculadora - Inputs Generados) --- */
+  /* --- Form Elements (Calculadora) --- */
   .card input[type="number"],
-  .card select { /* Aplica a selects generados DENTRO del form */
+  .card select,
+  .card #formulario select { /* Ensure all selects inside form are targeted */
     width: 100%;
-    padding: 0.75rem 1rem; /* Standard padding */
-    border: 1px solid #cbd5e0; /* Lighter gray border */
-    border-radius: 0.5rem; /* Consistent rounding */
-    font-size: 1rem;
-    background-color: #fdfdfe; /* Slightly off-white background */
+    padding: 0.6rem 0.9rem; /* Adjust padding */
+    border: 1px solid #d1d5db; /* Gray border */
+    border-radius: 0.375rem; /* Standard rounding */
+    font-size: 0.95rem;
+    background-color: #fff; /* White background */
     transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    color: #2d3748; /* Dark text for inputs */
-    min-height: calc(1.5em + 1.5rem + 2px); /* Adjust based on line-height, padding, border */
+    color: #1f2937;
+    min-height: calc(1.6em + 1.2rem + 2px); /* Adjusted min-height */
   }
 
-  /* Estilos para selects generados DENTRO del form */
   .card #formulario select {
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
-      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%234a5568"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>');
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%236b7280"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>');
       background-repeat: no-repeat;
-      background-position: right 0.75rem center;
-      background-size: 1.25em;
+      background-position: right 0.6rem center;
+      background-size: 1.1em;
       padding-right: 2.5rem;
   }
-   .card #formulario select:required:invalid { color: #718096; }
-   .card #formulario select option:not(:first-child) { color: #1a202c; }
+   .card #formulario select:required:invalid { color: #6b7280; }
+   .card #formulario select option:not(:first-child) { color: #1f2937; }
    .card #formulario select option[value=""][disabled] { display: none; }
 
   .card input[type="number"]:focus,
-  .card #formulario select:focus { /* Aplica a selects generados DENTRO del form */
+  .card #formulario select:focus {
     outline: none;
-    border-color: #3182ce; /* Blue border on focus */
-    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3); /* Blue glow */
+    border-color: #3b82f6; /* Blue border on focus */
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); /* Blue glow */
   }
 
-  /* --- NUEVO: Estilos para Selección de Cálculo con Botones --- */
+  /* --- Calculation Selection Buttons --- */
   #calcSelectionContainer {
-      margin-bottom: 2rem; /* Espacio antes del formulario */
-      padding: 1rem;
-      background-color: #f8fafc; /* Fondo ligeramente distinto */
-      border: 1px solid #e2e8f0;
-      border-radius: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem 1.5rem; /* Adjust padding */
+      background-color: #f9fafb; /* Very light gray background */
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
   }
 
   #calcSelectionContainer h2 {
       margin-top: 0;
-      margin-bottom: 1.5rem;
-      text-align: center;
-      font-size: 1.2em;
-      color: #2c5282;
+      margin-bottom: 1rem;
+      text-align: left; /* Align left */
+      font-size: 1rem; /* Smaller heading */
+      color: #1f2937;
       font-weight: 600;
+      /* Add icon simulation if desired */
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
   }
+  /* Example icon */
+   #calcSelectionContainer h2::before {
+       content: ''; display: inline-block; width: 1.2em; height: 1.2em;
+       background-color: #4b5563; /* Icon color */
+       mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.372A3.375 3.375 0 0116.5 17.25V18c0 .621-.504 1.125-1.125 1.125H8.625c-.621 0-1.125-.504-1.125-1.125v-.75a3.375 3.375 0 01-1.73-1.578l-1.57-.372zM19.8 15.3c.07-.142.13-.29.18-.442M4.2 15.3c-.05.152-.09.3-.18.442m0 0l1.57.372a3.375 3.375 0 011.73 1.578V18c0 .621.504 1.125 1.125 1.125h6.75c.621 0 1.125-.504 1.125-1.125v-.75a3.375 3.375 0 011.73-1.578l1.57-.372z" /></svg>');
+       mask-size: contain; mask-repeat: no-repeat;
+   }
 
-  .calc-group {
-      margin-bottom: 1.5rem;
-  }
-  .calc-group:last-child {
-      margin-bottom: 0;
-  }
+
+  .calc-group { margin-bottom: 1.25rem; }
+  .calc-group:last-child { margin-bottom: 0; }
 
   .calc-group-heading {
-      font-size: 1em;
+      font-size: 0.9rem;
       font-weight: 600;
-      color: #4a5568;
-      margin-bottom: 0.75rem;
-      padding-bottom: 0.25rem;
-      border-bottom: 1px solid #e2e8f0;
+      color: #4b5563; /* Darker gray for group heading */
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex; /* For icon alignment */
+      align-items: center;
+      gap: 0.4rem;
   }
+  /* Add specific icons for groups (Examples) */
+  .calc-group:nth-of-type(1) .calc-group-heading::before { content: '💧'; }
+  .calc-group:nth-of-type(2) .calc-group-heading::before { content: '📏'; }
+  .calc-group:nth-of-type(3) .calc-group-heading::before { content: '❤️'; }
+  .calc-group:nth-of-type(4) .calc-group-heading::before { content: '💊'; }
+  .calc-group:nth-of-type(5) .calc-group-heading::before { content: '💉'; }
+  .calc-group:nth-of-type(6) .calc-group-heading::before { content: '🍬'; } /* Glucose */
+  .calc-group:nth-of-type(7) .calc-group-heading::before { content: '🧂'; } /* Saline */
+  .calc-group:nth-of-type(8) .calc-group-heading::before { content: '↔️'; } /* Conversions */
 
   .calc-option-button {
-      display: inline-block; /* O 'block' si quieres uno por línea */
+      display: inline-flex; /* Align icon and text */
+      align-items: center;
+      gap: 0.4rem;
       background-color: #ffffff;
-      border: 1px solid #cbd5e0;
-      color: #2d3748;
-      padding: 0.6rem 1rem;
-      margin: 0.25rem; /* Espacio entre botones */
+      border: 1px solid #d1d5db; /* Match input border */
+      color: #374151;
+      padding: 0.4rem 0.8rem; /* Adjust padding */
+      margin: 0.2rem;
       border-radius: 0.375rem;
       cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: 500;
+      font-size: 0.85rem; /* Slightly smaller */
+      font-weight: 400; /* Normal weight */
       transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
-      text-align: left; /* Alineación del texto */
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      text-align: left;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
+   /* Add icons to buttons */
+   .calc-option-button::before {
+       content: ''; display: inline-block; width: 1em; height: 1em;
+       background-color: #6b7280; /* Icon color */
+       mask-size: contain; mask-repeat: no-repeat;
+       opacity: 0.8;
+   }
+   /* Assign specific icons (using mask-image for SVG icons) */
+   .calc-option-button[data-value="normo"]::before,
+   .calc-option-button[data-value="hiper"]::before,
+   .calc-option-button[data-value="venti"]::before,
+   .calc-option-button[data-value="quemaduras"]::before,
+   .calc-option-button[data-value="perdidasPedia"]::before,
+   .calc-option-button[data-value="perdidasNeo"]::before { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>'); background-color: #ef4444;} /* Loss icon */
+   .calc-option-button[data-value="scq"]::before,
+   .calc-option-button[data-value="imc"]::before { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.5-12.75a3 3 0 01-3 3h-3.75a3 3 0 01-3-3v-.75m9 .75a3 3 0 00-3-3H8.25a3 3 0 00-3 3v.75m12 6a3 3 0 01-3 3H8.25a3 3 0 01-3-3v-.75m3 .75h3.75a3 3 0 013 3M3.75 9h16.5M3.75 12h16.5m-16.5 3h16.5" /></svg>'); } /* Scale/Measure */
+   .calc-option-button[data-value="pam"]::before,
+   .calc-option-button[data-value="pvc"]::before { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>'); } /* Heart */
+   .calc-option-button[data-value="dosisVol"]::before,
+   .calc-option-button[data-value="dosisPeso"]::before { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5M12 3.75v16.5" /></svg>'); } /* Pill/Dose like */
+   .calc-option-button[data-value="velocidadInf"]::before,
+   .calc-option-button[data-value="calculoGoteo"]::before { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'); } /* Clock/Drip */
+   .calc-option-button[data-value="mixGlucosa"]::before,
+   .calc-option-button[data-value="gir"]::before,
+   .calc-option-button[data-value="volGlucosa"]::before { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-6.75-3.75L9 12l5.25 3.75M9 12h9" /></svg>'); } /* Beaker/Mix like */
+   .calc-option-button[data-value="mix"]::before { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.372A3.375 3.375 0 0116.5 17.25V18c0 .621-.504 1.125-1.125 1.125H8.625c-.621 0-1.125-.504-1.125-1.125v-.75a3.375 3.375 0 01-1.73-1.578l-1.57-.372zM19.8 15.3c.07-.142.13-.29.18-.442M4.2 15.3c-.05.152-.09.3-.18.442m0 0l1.57.372a3.375 3.375 0 011.73 1.578V18c0 .621.504 1.125 1.125 1.125h6.75c.621 0 1.125-.504 1.125-1.125v-.75a3.375 3.375 0 011.73-1.578l1.57-.372z" /></svg>'); } /* Beaker */
+   .calc-option-button[data-value="convMgMcg"]::before,
+   .calc-option-button[data-value="convGMg"]::before { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h18M16.5 3l4.5 4.5m0 0L16.5 12M21 7.5H3" /></svg>'); } /* Arrows */
 
   .calc-option-button:hover {
-      background-color: #edf2f7;
-      border-color: #a0aec0;
+      background-color: #f3f4f6; /* Lighter gray on hover */
+      border-color: #9ca3af;
+  }
+  .calc-option-button:active {
+      transform: scale(0.98);
   }
 
   .calc-option-button.active {
-      background-color: #3182ce; /* Azul primario */
-      color: #ffffff;
-      border-color: #2b6cb0;
-      font-weight: 600;
-      transform: scale(1.02); /* Ligero zoom al seleccionar */
-      box-shadow: 0 2px 5px rgba(49, 130, 206, 0.3);
+      background-color: #eff6ff; /* Lightest blue for active */
+      color: #1d4ed8; /* Darker blue text */
+      border-color: #3b82f6; /* Blue border */
+      font-weight: 500; /* Medium weight active */
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
+   .calc-option-button.active::before {
+        background-color: #1d4ed8; /* Darker icon color when active */
+        opacity: 1;
+   }
 
-  /* Placeholder del Form (se gestiona visibilidad con JS) */
+  /* Placeholder */
   #formPlaceholder {
     text-align: center;
-    color: #718096;
-    margin-top: 2rem;
-    font-style: italic;
+    color: #6b7280; /* Match screenshot gray */
+    margin-top: 1rem; /* Adjust space */
+    padding: 1rem;
+    font-style: normal; /* Not italic */
+    font-size: 0.9rem;
+    background-color: #f9fafb; /* Background */
+    border-radius: 0.375rem;
+    border: 1px dashed #d1d5db; /* Dashed border */
   }
 
-  /* More specific selector for the calculator button */
+  /* Calculator Button */
   .card button#calcBtn {
     width: 100%;
-    padding: 0.85rem 1rem;
-    margin-top: 2rem;
+    padding: 0.7rem 1rem; /* Adjust padding */
+    margin-top: 1.5rem;
     cursor: pointer;
     border: none;
-    background-color: #3182ce; /* Primary blue */
+    background-color: #3b82f6; /* Match header blue */
     color: #ffffff;
-    font-weight: 700;
-    font-size: 1.05rem;
-    border-radius: 0.5rem;
+    font-weight: 600; /* Semi-bold */
+    font-size: 1rem; /* Standard size */
+    border-radius: 0.375rem;
     transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: none; /* Oculto inicialmente */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    display: none;
   }
 
   .card button#calcBtn:disabled {
-      background-color: #a0aec0;
+      background-color: #9ca3af; /* Gray disabled */
       cursor: not-allowed;
       box-shadow: none;
   }
 
-  .card button#calcBtn:hover:not(:disabled) { background-color: #2b6cb0; }
-  .card button#calcBtn:active:not(:disabled) { transform: translateY(1px); background-color: #2c5282; }
+  .card button#calcBtn:hover:not(:disabled) { background-color: #2563eb; } /* Darker blue */
+  .card button#calcBtn:active:not(:disabled) { transform: translateY(1px); background-color: #1d4ed8; }
 
-  /* --- Result Area (Calculadora) --- */
+  /* --- Result Area --- */
   .card #result {
-    margin-top: 2.5rem;
-    padding: 1.5rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    text-align: center;
+    margin-top: 1.5rem; /* Less space above */
+    padding: 1rem 1.5rem; /* Adjust padding */
+    font-size: 1rem; /* Standard result size */
+    font-weight: 500; /* Medium weight */
+    text-align: left; /* Align left */
     white-space: pre-line;
-    background-color: #edf2f7; /* Light gray-blue background */
-    border-radius: 0.5rem;
-    color: #2d3748; /* Dark gray text */
-    border: 1px dashed #cbd5e0; /* Lighter dashed border */
-    min-height: 50px;
-    display: none; /* Oculto inicialmente */
+    background-color: #f3f4f6; /* Lighter gray background */
+    border-radius: 0.375rem;
+    color: #1f2937;
+    border: 1px solid #e5e7eb; /* Solid border */
+    min-height: 40px; /* Adjust min height */
+    display: none;
   }
 
-  /* --- Formula/Info Display (Calculadora) --- */
+  /* --- Formula/Info Display --- */
   .card #formulaDisplayArea {
-      display: none; /* Oculto inicialmente */
+      display: none;
   }
   .card .formula-display-static,
   .card .constante-info,
   .card .info-display-static {
-      font-size: 0.85em;
-      font-style: italic;
-      color: #4a5568;
+      font-size: 0.8rem; /* Smaller font */
+      font-style: normal; /* No italics */
+      color: #4b5563; /* Darker gray */
       margin-top: 1rem;
-      padding: 0.75rem;
-      background-color: #f8fafc;
-      border: 1px solid #e2e8f0;
+      padding: 0.6rem 0.8rem;
+      background-color: #f9fafb; /* Match selection bg */
+      border: 1px solid #e5e7eb; /* Match card border */
       border-radius: 0.375rem;
       line-height: 1.4;
       white-space: pre-line;
-      text-align: center;
+      text-align: left; /* Align left */
   }
-   .card .info-display-static { font-style: normal; text-align: left; }
-   .card .constante-info ul { list-style: none; padding: 0; margin: 0.5rem 0 0 0; text-align: left; display: inline-block; font-style: normal; }
-   .card .constante-info li { margin-bottom: 0.25rem; }
-   .card .constante-info strong { display: block; font-style: normal; font-weight: 600; margin-bottom: 0.5rem; color: #2d3748; }
+   .card .constante-info ul { list-style: disc; padding-left: 1.2rem; margin: 0.5rem 0 0 0; text-align: left; } /* Use disc */
+   .card .constante-info li { margin-bottom: 0.15rem; }
+   .card .constante-info strong { display: block; font-weight: 600; margin-bottom: 0.3rem; color: #1f2937; }
 
-  /* --- Grid Layout (Calculadora - Generado) --- */
-  .card #formulario .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .card #formulario .input-unit-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; align-items: end; }
-  .card #formulario .input-unit-grid label { grid-column: 1 / -1; margin-bottom: 0.25rem; }
+  /* --- Grid Layout --- */
+  .card #formulario .grid,
+  .card #formulario .input-unit-grid {
+      display: grid;
+      gap: 0.8rem; /* Adjust gap */
+  }
+  .card #formulario .grid { grid-template-columns: 1fr 1fr; }
+  .card #formulario .input-unit-grid { grid-template-columns: 2fr 1fr; align-items: end; }
+  .card #formulario .input-unit-grid label { grid-column: 1 / -1; margin-bottom: 0.2rem; }
 
-  /* --- Helper Text (Calculadora - Generado) --- */
-  .card #formulario #percentHelper { font-size: 0.8rem; color: #718096; margin-top: 0.25rem; min-height: 1em; }
+  /* --- Helper Text --- */
+  .card #formulario #percentHelper { font-size: 0.75rem; color: #6b7280; margin-top: 0.15rem; min-height: 1em; }
 
-  /* --- Disclaimer (Calculadora) --- */
-  .card .disclaimer { margin-top: 2rem; text-align: center; }
-  .card .disclaimer small { color: #e53e3e; font-weight: 500; }
+  /* --- Disclaimer --- */
+  .card .disclaimer { margin-top: 1.5rem; text-align: center; }
+  .card .disclaimer small { color: #4b5563; font-weight: 400; font-size: 0.75rem; } /* Less prominent disclaimer */
 
-  /* --- Custom Input Sections (Calculadora - Generado) --- */
+  /* --- Custom Input Sections --- */
   .card #formulario .custom-input-section {
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      margin-top: 1rem;
-      background-color: #f8fafc;
+      border: 1px dashed #d1d5db; /* Dashed border */
+      border-radius: 0.375rem;
+      padding: 0.8rem 1rem; /* Adjust padding */
+      margin-top: 0.8rem;
+      background-color: #f9fafb;
    }
 
-  /* --- NANDA Searcher Styles --- */
-  .nanda-container { /* Renamed from .container to avoid conflicts */
-      max-width: 850px;
-      margin: 0 auto; /* Center within its container */
-      background: #ffffff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      border: 1px solid #dee2e6;
+  /* --- NANDA Searcher Styles (Copied from previous response, check consistency) --- */
+  /* NANDA Styles are generally okay, minor tweaks for consistency if needed */
+  .nanda-container {
+      max-width: 850px; margin: 1rem auto; background: #ffffff; padding: 25px; /* Adjust padding */
+      border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e5e7eb;
   }
-
-  .nanda-container h1 {
-      text-align: center;
-      color: #2c5282; /* Align color with calculator */
-      margin-top: 0; /* Remove top margin if first element */
-      margin-bottom: 15px;
-      font-weight: 700; /* Align weight */
-      font-size: 1.6em;
-  }
-   .nanda-container h2 {
-      text-align: left;
-      color: #4a5568; /* Align color */
-      margin-top: 30px;
-      margin-bottom: 15px;
-      font-size: 1.4em;
-      border-bottom: 2px solid #e2e8f0; /* Align border color */
-      padding-bottom: 8px;
-      font-weight: 600;
-   }
-
-  .nanda-container label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600; /* Align weight */
-      color: #4a5568; /* Align color */
-      font-size: 0.9rem; /* Align size */
-  }
-
-  /* Use class for manifestation inputs */
-  .nanda-container .manifestation-input {
-      width: 100%;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      border: 1px solid #cbd5e0; /* Align border color */
-      border-radius: 6px; /* Slightly different radius ok */
-      box-sizing: border-box;
-      font-size: 1rem;
-      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-      background-color: #fdfdfe; /* Align background */
-      color: #2d3748; /* Align text color */
-  }
-  .nanda-container .manifestation-input:focus {
-       border-color: #3182ce; /* Align focus color */
-       outline: 0;
-       box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3); /* Align focus shadow */
-  }
-
-  /* Use ID for the add button */
-  .nanda-container button#addManifestationButton {
-      padding: 6px 12px;
-      background-color: #38a169; /* Softer green */
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9em;
-      margin-top: 5px;
-      margin-bottom: 20px;
-      transition: background-color 0.2s ease;
-      font-weight: 500;
-  }
-  .nanda-container button#addManifestationButton:hover { background-color: #2f855a; }
-
-  /* Use ID for the search button */
-  .nanda-container button#searchButton {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      background-color: #3182ce; /* Align color with calculator button */
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1.1em;
-      font-weight: 700; /* Align weight */
-      margin-bottom: 25px;
-      transition: background-color 0.2s ease;
-  }
-  .nanda-container button#searchButton:hover { background-color: #2b6cb0; } /* Align hover */
-
-  .nanda-container #resultsArea {
-      margin-top: 25px;
-      border-top: 1px solid #e2e8f0; /* Align border */
-      padding-top: 25px;
-  }
-
-  .nanda-container .domain-category {
-      border: 1px solid #e2e8f0; /* Align border */
-      border-radius: 8px;
-      margin-bottom: 15px;
-      overflow: hidden; /* Keep content clipped */
-  }
-
-  .nanda-container .domain-category summary {
-      background-color: #f8fafc; /* Align background */
-      padding: 12px 15px;
-      cursor: pointer;
-      font-weight: 600;
-      color: #2c5282; /* Align color */
-      list-style: none; /* Remove default marker */
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid transparent; /* Start transparent */
-  }
+  .nanda-container h1 { text-align: center; color: #1f2937; margin-bottom: 1rem; font-weight: 600; font-size: 1.5rem; }
+  .nanda-container h2 { text-align: left; color: #374151; margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1.25rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; font-weight: 600; }
+  .nanda-container label { display: block; margin-bottom: 0.4rem; font-weight: 500; color: #374151; font-size: 0.875rem; }
+  .nanda-container .manifestation-input { width: 100%; padding: 0.6rem 0.9rem; margin-bottom: 0.6rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.95rem; background-color: #fff; color: #1f2937; }
+  .nanda-container .manifestation-input:focus { border-color: #3b82f6; outline: 0; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); }
+  .nanda-container button#addManifestationButton { padding: 0.4rem 0.8rem; background-color: #10b981; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.85rem; margin-top: 0.3rem; margin-bottom: 1rem; transition: background-color 0.2s ease; font-weight: 500; }
+  .nanda-container button#addManifestationButton:hover { background-color: #059669; }
+  .nanda-container button#searchButton { display: block; width: 100%; padding: 0.7rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 1rem; font-weight: 600; margin-bottom: 1.5rem; transition: background-color 0.2s ease; }
+  .nanda-container button#searchButton:hover { background-color: #2563eb; }
+  .nanda-container #resultsArea { margin-top: 1.5rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem; }
+  .nanda-container .domain-category { border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 1rem; overflow: hidden; }
+  .nanda-container .domain-category summary { background-color: #f9fafb; padding: 0.8rem 1rem; cursor: pointer; font-weight: 600; color: #1f2937; list-style: none; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid transparent; }
   .nanda-container .domain-category summary::-webkit-details-marker { display: none; }
-  .nanda-container .domain-category summary::after { content: '+'; font-size: 1.4em; font-weight: bold; color: #718096; transition: transform 0.2s ease-in-out; }
-  .nanda-container .domain-category[open] summary::after { content: '−'; }
-  .nanda-container .domain-category[open] summary { border-bottom-color: #e2e8f0; } /* Show border when open */
-  .nanda-container .domain-category .results-container { padding: 15px; background-color: #fff; } /* Keep padding for the inner container */
+  .nanda-container .domain-category summary::after { content: '+'; font-size: 1.2em; color: #6b7280; transition: transform 0.2s ease-in-out; }
+  .nanda-container .domain-category[open] summary::after { transform: rotate(45deg); }
+  .nanda-container .domain-category[open] summary { border-bottom-color: #e5e7eb; }
+  .nanda-container .domain-category .results-container { padding: 1rem; background-color: #fff; }
+  .nanda-container mark { background-color: #fef3c7; padding: 0.1em 0.2em; border-radius: 3px; font-weight: 500; color: #78350f; }
+  .nanda-container #resultsArea > p { text-align: center; color: #6b7280; font-style: italic; margin-top: 1rem; }
+  .nanda-container .result-item-details { background-color: #fff; border: 1px solid #f3f4f6; border-radius: 0.375rem; margin-bottom: 0.8rem; overflow: hidden; }
+  .nanda-container .result-item-details:last-child { margin-bottom: 0; }
+  .nanda-container .result-item-summary { padding: 0.6rem 1rem; cursor: pointer; list-style: none; font-weight: 500; color: #3b82f6; background-color: #f9fafb; border-bottom: 1px solid transparent; transition: background-color 0.2s ease; display: flex; justify-content: space-between; align-items: center; }
+  .nanda-container .result-item-summary:hover { background-color: #f3f4f6; }
+  .nanda-container .result-item-summary::-webkit-details-marker { display: none; }
+  .nanda-container .result-item-summary::after { content: '+'; font-size: 1.1em; color: #9ca3af; transition: transform 0.2s ease-in-out; }
+  .nanda-container .result-item-details[open] > .result-item-summary { border-bottom-color: #e5e7eb; background-color: #f3f4f6; }
+  .nanda-container .result-item-details[open] > .result-item-summary::after { transform: rotate(45deg); }
+  .nanda-container .result-item-content { padding: 1rem; border-top: 1px solid #e5e7eb; background-color: #fff; }
+  .nanda-container .result-item-content h4 { margin-top: 0.8rem; margin-bottom: 0.4rem; color: #374151; font-size: 0.9rem; font-weight: 600; padding-bottom: 0.2rem; border-bottom: 1px solid #f3f4f6; }
+  .nanda-container .result-item-content ul { list-style: disc; margin-left: 1.2rem; padding-left: 0.3rem; font-size: 0.9rem; color: #1f2937; margin-bottom: 0.8rem; }
+  .nanda-container .result-item-content p.definition-text { font-size: 0.9rem; color: #1f2937; margin-bottom: 0.8rem; line-height: 1.5; }
+  .nanda-container .result-item-content li { margin-bottom: 0.3rem; line-height: 1.5; }
 
-  .nanda-container mark { background-color: #ffecb3; padding: 0.1em 0.2em; border-radius: 3px; font-weight: 600; color: #744210; } /* Slightly darker text on highlight */
-  .nanda-container #resultsArea > p { text-align: center; color: #6c757d; font-style: italic; margin-top: 20px; }
-
-  /* --- NANDA Nested Accordion Styles --- */
-  .nanda-container .result-item-details {
-      background-color: #fff; /* Fondo blanco para la etiqueta */
-      border: 1px solid #e9ecef; /* Borde sutil */
-      border-radius: 6px; /* Bordes redondeados */
-      margin-bottom: 10px; /* Espacio entre etiquetas */
-      overflow: hidden; /* Evitar desbordamientos */
-  }
-   .nanda-container .result-item-details:last-child {
-       margin-bottom: 0; /* Quitar margen inferior al último */
-   }
-
-  .nanda-container .result-item-summary {
-      padding: 10px 15px;
-      cursor: pointer;
-      list-style: none; /* Quitar marcador por defecto */
-      font-weight: 600;
-      color: #2b6cb0; /* Color azul para el título de la etiqueta */
-      background-color: #f8f9fa; /* Fondo ligeramente gris para el título */
-      border-bottom: 1px solid transparent; /* Borde inferior transparente por defecto */
-      transition: background-color 0.2s ease;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-  }
-  .nanda-container .result-item-summary:hover {
-      background-color: #e9ecef; /* Gris más oscuro al pasar el ratón */
-  }
-  .nanda-container .result-item-summary::-webkit-details-marker {
-      display: none; /* Ocultar marcador en Chrome/Safari */
-  }
-  .nanda-container .result-item-summary::after {
-      content: '+'; /* Indicador '+' por defecto */
-      font-size: 1.2em;
-      font-weight: bold;
-      color: #6c757d; /* Color gris para el indicador */
-      transition: transform 0.2s ease-in-out;
-  }
-  .nanda-container .result-item-details[open] > .result-item-summary {
-       border-bottom-color: #dee2e6; /* Mostrar borde cuando está abierto */
-       background-color: #e9ecef;
-  }
-  .nanda-container .result-item-details[open] > .result-item-summary::after {
-      content: '−'; /* Cambiar indicador a '-' cuando está abierto */
-  }
-
-  .nanda-container .result-item-content {
-      padding: 15px; /* Padding interno para el contenido de la etiqueta */
-      border-top: 1px solid #dee2e6; /* Línea separadora opcional */
-      background-color: #fff; /* Fondo blanco para el contenido */
-  }
-
-   /* Ajustes para los títulos H4 y listas UL dentro del contenido desplegable */
-   .nanda-container .result-item-content h4 {
-       margin-top: 12px;
-       margin-bottom: 6px;
-       color: #4a5568;
-       font-size: 0.95em;
-       font-weight: 600;
-       padding-bottom: 3px;
-       border-bottom: 1px solid #f1f1f1; /* Línea sutil bajo H4 */
-   }
-   .nanda-container .result-item-content ul {
-       list-style: disc;
-       margin-left: 20px;
-       padding-left: 5px;
-       font-size: 0.95em;
-       color: #343a40;
-       margin-bottom: 10px; /* Espacio después de la lista */
-   }
-    .nanda-container .result-item-content p.definition-text {
-       font-size: 0.95em;
-       color: #343a40;
-       margin-bottom: 10px;
-       line-height: 1.45;
-   }
-    .nanda-container .result-item-content li {
-        margin-bottom: 5px;
-        line-height: 1.45;
-    }
-
-   /* Ocultar el estilo .result-item original ya que ahora usamos .result-item-details */
-   .nanda-container .result-item {
-       /* Estilos antiguos - probablemente ya no necesarios o deben adaptarse */
-   }
-
-
-  /* --- Responsive Adjustments (Combined) --- */
-  @media (max-width: 768px) { /* Wider breakpoint for nav wrap */
-      .tab-nav { padding: 0.75rem 1rem; }
+  /* --- Responsive Adjustments --- */
+  @media (max-width: 768px) {
+      .tab-nav { padding: 0.5rem; justify-content: center; } /* Center buttons on smaller screens */
+      .tab-nav button#btnCalcTab, .tab-nav button#btnNandaTab { font-size: 0.85rem; padding: 0.4rem 0.8rem;}
+      .tab-content { padding: 1rem; }
+      .card { padding: 1rem 1.2rem; margin: 0.5rem auto; }
+      .card h1 { font-size: 1.3rem; }
+      .card h1 small { font-size: 0.7rem; margin-bottom: 1rem;}
+      #calcSelectionContainer { padding: 0.8rem 1rem; }
+      #calcSelectionContainer h2 { font-size: 0.95rem;}
+      .calc-group-heading { font-size: 0.85rem; }
+      .calc-option-button { font-size: 0.8rem; padding: 0.35rem 0.7rem; }
+      .card input[type="number"], .card #formulario select { font-size: 0.9rem; padding: 0.5rem 0.8rem; }
+      .card #formulario select { padding-right: 2.2rem; background-size: 1em; }
+      .card button#calcBtn { padding: 0.6rem 1rem; font-size: 0.95rem; }
+      .card #result { padding: 0.8rem 1rem; font-size: 0.95rem; }
+      .nanda-container { padding: 15px; margin: 0.5rem auto; }
+      .nanda-container h1 { font-size: 1.3em; }
+      .nanda-container h2 { font-size: 1.1em; }
+      .nanda-container button#addManifestationButton { font-size: 0.8em; }
+      .nanda-container button#searchButton { font-size: 0.95em; padding: 0.6rem; }
+      .nanda-container .domain-category summary { padding: 0.6rem 0.8rem; font-size: 0.9rem; }
+      .nanda-container .result-item-summary { padding: 0.5rem 0.8rem; font-size: 0.85rem; }
+      .nanda-container .result-item-content { padding: 0.8rem; }
+      .nanda-container .result-item-content h4 { font-size: 0.85rem; }
+      .nanda-container .result-item-content ul, .nanda-container .result-item-content p.definition-text { font-size: 0.85rem; }
   }
 
   @media (max-width: 600px) {
-    .tab-nav { padding: 0.5rem 1rem; }
-    .tab-nav button { padding: 0.5rem 0.8rem; font-size: 0.9rem;}
-    .tab-content { padding: 1rem; } /* Adjust padding for smaller screens */
-
-    /* Calculator specific responsive */
-    .card { padding: 1.5rem; margin: 1rem auto; }
-    .card #formulario .grid,
-    .card #formulario .input-unit-grid {
-        grid-template-columns: 1fr; /* Cambiar grids a una columna */
-        gap: 0.5rem;
-     }
-    .card #formulario .input-unit-grid label { margin-bottom: 0.5rem; }
-    .card h1 { font-size: 1.5rem; }
-    .card button#calcBtn { padding: 0.75rem 1rem; font-size: 1rem; }
-    .card #result { padding: 1rem; font-size: 1rem; }
-    .card .formula-display-static, .card .constante-info, .card .info-display-static { font-size: 0.8em; padding: 0.5rem; }
-    .card #formulario select { font-size: 1rem; padding: 0.8rem 1rem; padding-right: 2.8rem; background-size: 1.4em; background-position: right 0.8rem center; }
-    #calcSelectionContainer h2 { font-size: 1.1em; }
-    .calc-option-button { font-size: 0.85rem; padding: 0.5rem 0.8rem; }
-    .calc-group-heading { font-size: 0.95em; }
-
-
-    /* NANDA specific responsive */
-    .nanda-container { padding: 20px; margin: 1rem auto; }
-    .nanda-container h1 { font-size: 1.4em; }
-     .nanda-container h2 { font-size: 1.2em; }
-     .nanda-container button#addManifestationButton { font-size: 0.85em; } /* Use ID */
-     .nanda-container button#searchButton { font-size: 1em; padding: 10px; }
-     .nanda-container .domain-category summary { padding: 10px 12px; font-size: 0.95em; }
-
-     /* NANDA Nested Accordion Responsive */
-     .nanda-container .result-item-summary {
-         padding: 8px 12px;
-         font-size: 0.9em;
-     }
-      .nanda-container .result-item-content {
-         padding: 10px;
-     }
-     .nanda-container .result-item-content h4 {
-         font-size: 0.9em;
-     }
-     .nanda-container .result-item-content ul,
-     .nanda-container .result-item-content p.definition-text {
-         font-size: 0.88em;
-     }
-
+      .card #formulario .grid, .card #formulario .input-unit-grid { grid-template-columns: 1fr; }
+      .card #formulario .input-unit-grid label { margin-bottom: 0.3rem; }
+      .card #formulaDisplayArea .constante-info ul { display: block; text-align: left; padding-left: 0.5rem;} /* Stack list items */
   }
+
 </style>
 </head>
 <body>
